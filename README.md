@@ -295,21 +295,52 @@ neurofluent/
 
 ## API エンドポイント一覧
 
-| メソッド | エンドポイント | 説明 | 認証 |
+| メソッド | エンドポイント | 説明 | Phase |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | ユーザー新規登録 → トークン発行 | 不要 |
-| `POST` | `/api/auth/login` | ログイン → トークン発行 | 不要 |
-| `GET` | `/api/auth/me` | 現在のユーザー情報取得 | 必要 |
-| `POST` | `/api/talk/start` | 会話セッション開始 | 必要 |
-| `POST` | `/api/talk/message` | メッセージ送信（AI応答 + フィードバック） | 必要 |
-| `GET` | `/api/talk/sessions` | セッション一覧（ページネーション） | 必要 |
-| `GET` | `/api/talk/sessions/:id` | セッション詳細（全メッセージ含む） | 必要 |
-| `GET` | `/api/speaking/flash` | 瞬間英作文エクササイズ取得 | 必要 |
-| `POST` | `/api/speaking/flash/check` | 回答チェック + スコアリング | 必要 |
-| `GET` | `/api/review/due` | 本日の復習対象アイテム取得 | 必要 |
-| `POST` | `/api/review/complete` | 復習完了（FSRS レーティング更新） | 必要 |
-| `GET` | `/api/analytics/dashboard` | ダッシュボード統計データ | 必要 |
-| `GET` | `/health` | ヘルスチェック | 不要 |
+| **認証** ||||
+| `POST` | `/api/auth/register` | ユーザー新規登録 → トークン発行 | 1 |
+| `POST` | `/api/auth/login` | ログイン → トークン発行 | 1 |
+| `GET` | `/api/auth/me` | 現在のユーザー情報取得 | 1 |
+| **AIトーク** ||||
+| `POST` | `/api/talk/start` | 会話セッション開始 | 1 |
+| `POST` | `/api/talk/message` | メッセージ送信（AI応答 + フィードバック） | 1 |
+| `GET` | `/api/talk/sessions` | セッション一覧 | 1 |
+| `GET` | `/api/talk/sessions/:id` | セッション詳細 | 1 |
+| `POST` | `/api/talk/realtime/start` | リアルタイム音声セッション開始 | 2 |
+| `WS` | `/api/talk/realtime/ws/:id` | WebSocket 音声ストリーム | 2 |
+| **スピーキング** ||||
+| `GET` | `/api/speaking/flash` | 瞬間英作文エクササイズ取得 | 1 |
+| `POST` | `/api/speaking/flash/check` | 回答チェック + スコアリング | 1 |
+| `GET` | `/api/speaking/pattern/categories` | パターンカテゴリ一覧 | 2 |
+| `GET` | `/api/speaking/pattern/exercises` | パターン練習問題取得 | 2 |
+| `POST` | `/api/speaking/pattern/check` | パターン回答評価 | 2 |
+| `GET` | `/api/speaking/pronunciation/phonemes` | 日本語話者の発音問題一覧 | 4 |
+| `GET` | `/api/speaking/pronunciation/exercises` | 発音練習問題生成 | 4 |
+| `POST` | `/api/speaking/pronunciation/evaluate` | 発音評価（Azure Speech） | 4 |
+| **リスニング** ||||
+| `GET` | `/api/listening/shadowing/material` | シャドーイング素材生成 | 2 |
+| `POST` | `/api/listening/shadowing/evaluate` | シャドーイング音声評価 | 2 |
+| `POST` | `/api/listening/tts` | テキスト→音声変換 (TTS) | 2 |
+| `GET` | `/api/listening/mogomogo` | もごもご素材一覧 | 3 |
+| `POST` | `/api/listening/mogomogo/evaluate` | もごもご練習評価 | 3 |
+| `GET` | `/api/listening/comprehension` | リスニング理解度テスト | 4 |
+| `POST` | `/api/listening/comprehension/check` | 理解度回答送信 | 4 |
+| **復習 (FSRS)** ||||
+| `GET` | `/api/review/due` | 本日の復習対象アイテム取得 | 1 |
+| `POST` | `/api/review/complete` | 復習完了（FSRS レーティング更新） | 1 |
+| **分析** ||||
+| `GET` | `/api/analytics/dashboard` | ダッシュボード統計データ | 1 |
+| `GET` | `/api/analytics/advanced` | 高度な分析（スキルレーダー等） | 3 |
+| `GET` | `/api/analytics/advanced/report/weekly` | 週次レポート | 3 |
+| `GET` | `/api/analytics/advanced/report/monthly` | 月次レポート | 3 |
+| **サブスクリプション** ||||
+| `GET` | `/api/subscription/plans` | プラン一覧 | 3 |
+| `GET` | `/api/subscription/current` | 現在のサブスクリプション | 3 |
+| `POST` | `/api/subscription/checkout` | Stripeチェックアウト | 3 |
+| `POST` | `/api/subscription/cancel` | サブスクリプション解約 | 3 |
+| `POST` | `/api/subscription/webhook` | Stripe Webhook | 3 |
+| **その他** ||||
+| `GET` | `/health` | ヘルスチェック | 1 |
 
 詳細は [API リファレンス](docs/api-reference.md) を参照してください。
 

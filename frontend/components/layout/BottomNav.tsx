@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   MessageCircle,
-  Zap,
+  Headphones,
+  Mic,
   RotateCcw,
 } from "lucide-react";
 
@@ -13,7 +14,8 @@ import {
 const navLinks = [
   { href: "/", label: "Home", icon: LayoutDashboard },
   { href: "/talk", label: "Talk", icon: MessageCircle },
-  { href: "/speaking/flash", label: "Flash", icon: Zap },
+  { href: "/listening", label: "Listen", icon: Headphones },
+  { href: "/speaking", label: "Speak", icon: Mic },
   { href: "/review", label: "Review", icon: RotateCcw },
 ];
 

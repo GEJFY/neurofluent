@@ -7,6 +7,10 @@ import {
   MessageCircle,
   Zap,
   RotateCcw,
+  Headphones,
+  Mic,
+  BarChart3,
+  Settings,
   Sun,
   Moon,
   LogOut,
@@ -18,8 +22,11 @@ import { useState, useEffect } from "react";
 const navLinks = [
   { href: "/", label: "Dashboard", labelJa: "ダッシュボード", icon: LayoutDashboard },
   { href: "/talk", label: "Talk", labelJa: "AIトーク", icon: MessageCircle },
-  { href: "/speaking/flash", label: "Flash", labelJa: "瞬間英作文", icon: Zap },
+  { href: "/listening", label: "Listening", labelJa: "リスニング", icon: Headphones },
+  { href: "/speaking", label: "Speaking", labelJa: "スピーキング", icon: Mic },
   { href: "/review", label: "Review", labelJa: "復習", icon: RotateCcw },
+  { href: "/analytics", label: "Analytics", labelJa: "分析", icon: BarChart3 },
+  { href: "/settings", label: "Settings", labelJa: "設定", icon: Settings },
 ];
 
 /**

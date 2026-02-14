@@ -48,6 +48,9 @@ class User(Base):
     api_usage_logs: Mapped[list["ApiUsageLog"]] = relationship(
         "ApiUsageLog", back_populates="user", lazy="selectin"
     )
+    subscription: Mapped["Subscription | None"] = relationship(
+        "Subscription", back_populates="user", uselist=False, lazy="selectin"
+    )
 
     def __repr__(self) -> str:
         return f"<User {self.email}>"

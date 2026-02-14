@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expiry_hours: int = 24
 
+    # Stripe (Phase 3: サブスクリプション決済)
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_price_standard: str = ""
+    stripe_price_premium: str = ""
+
     model_config = {"env_file": "../.env", "extra": "ignore"}
 
 

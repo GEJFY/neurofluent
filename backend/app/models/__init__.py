@@ -6,6 +6,11 @@ from app.models.review import ReviewItem
 from app.models.stats import DailyStat
 from app.models.api_usage import ApiUsageLog
 
+# Phase 2-4 モデル
+from app.models.pattern import PatternMastery
+from app.models.sound_pattern import SoundPatternMastery
+from app.models.subscription import Subscription
+
 __all__ = [
     "User",
     "ConversationSession",
@@ -13,4 +18,7 @@ __all__ = [
     "ReviewItem",
     "DailyStat",
     "ApiUsageLog",
+    "PatternMastery",
+    "SoundPatternMastery",
+    "Subscription",
 ]

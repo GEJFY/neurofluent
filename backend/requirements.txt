@@ -27,3 +27,12 @@ email-validator==2.1.1
 # Utilities
 python-multipart==0.0.20
 python-dotenv==1.0.1
+
+# WebSocket (Phase 2: リアルタイム音声)
+websockets==13.1
+
+# Payments (Phase 3: サブスクリプション)
+stripe==11.4.1
+
+# Audio Processing (Phase 2-4: 音声分析)
+numpy==1.26.4

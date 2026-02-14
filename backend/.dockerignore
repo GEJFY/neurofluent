@@ -1,0 +1,60 @@
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Version control
+.git/
+.gitignore
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Testing
+tests/
+test_*.py
+conftest.py
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Documentation
+README.md
+CHANGELOG.md
+docs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Distribution / Build
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Misc
+*.log
+.mypy_cache/
+.ruff_cache/

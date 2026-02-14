@@ -1,0 +1,15 @@
+# 開発・テスト用依存パッケージ
+-r requirements.txt
+
+# テスト
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
+httpx==0.28.1
+aiosqlite==0.20.0
+
+# リンター・フォーマッター
+ruff==0.8.6
+
+# 型チェック
+mypy==1.14.1

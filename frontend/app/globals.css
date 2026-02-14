@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+/* FluentEdge AI - Google Fonts 読み込み */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Noto+Sans+JP:wght@300;400;500;700&family=Source+Sans+3:ital,wght@0,300..900;1,300..900&display=swap");
+
+/* ===== カスタムCSS変数 - ダーク/ライトテーマ ===== */
+
+:root {
+  /* ライトモード */
+  --color-bg-primary: #F8FAFC;
+  --color-bg-secondary: #F1F5F9;
+  --color-bg-card: #FFFFFF;
+  --color-bg-input: #F1F5F9;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
+  --color-border: #E2E8F0;
+  --color-border-focus: #6366F1;
+  --color-primary: #6366F1;
+  --color-primary-hover: #4F46E5;
+  --color-accent: #22D3EE;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-success: #22C55E;
+}
+
+.dark {
+  /* ダークモード（デフォルト） */
+  --color-bg-primary: #0F172A;
+  --color-bg-secondary: #1E293B;
+  --color-bg-card: #1E293B;
+  --color-bg-input: #334155;
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #CBD5E1;
+  --color-text-muted: #64748B;
+  --color-border: #334155;
+  --color-border-focus: #6366F1;
+  --color-primary: #6366F1;
+  --color-primary-hover: #818CF8;
+  --color-accent: #22D3EE;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-success: #22C55E;
+}
+
+/* ===== ベースリセット ===== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Source Sans 3", "Noto Sans JP", sans-serif;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== スクロールバー ===== */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+/* ===== カスタムユーティリティ ===== */
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-countdown {
+    animation: countdown 1s ease-in-out;
+  }
+
+  @keyframes countdown {
+    0% {
+      transform: scale(0.5);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.2);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}

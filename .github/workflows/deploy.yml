@@ -1,6 +1,7 @@
 # =============================================================================
 # FluentEdge AI - CD Pipeline
-# ACRへのイメージプッシュ、Azure Bicepインフラデプロイ、Container Appsデプロイ
+# 環境別デプロイ (dev / staging / production)
+# ACRへのイメージプッシュ、Terraform plan/apply、Container Appsデプロイ
 # =============================================================================
 
 name: Deploy
@@ -10,10 +11,27 @@ on:
     branches:
       - main
       - develop
+      - "feature/**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "デプロイ先環境"
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+      skip_terraform:
+        description: "Terraform をスキップ"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   id-token: write
   contents: read
+  pull-requests: write
 
 env:
   ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
@@ -21,7 +39,7 @@ env:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # 環境判定
+  # 環境判定: ブランチまたは手動入力から環境を決定
   # ---------------------------------------------------------------------------
   set-environment:
     name: Determine Environment
@@ -29,17 +47,42 @@ jobs:
     outputs:
       environment: ${{ steps.set-env.outputs.environment }}
       image_tag: ${{ steps.set-env.outputs.image_tag }}
+      run_terraform: ${{ steps.set-env.outputs.run_terraform }}
     steps:
       - name: Set environment
         id: set-env
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "environment=production" >> "$GITHUB_OUTPUT"
-            echo "image_tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          # 手動デプロイの場合
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENV="${{ github.event.inputs.environment }}"
+            SKIP_TF="${{ github.event.inputs.skip_terraform }}"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            ENV="production"
+            SKIP_TF="false"
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            ENV="staging"
+            SKIP_TF="false"
           else
-            echo "environment=staging" >> "$GITHUB_OUTPUT"
-            echo "image_tag=staging-${{ github.sha }}" >> "$GITHUB_OUTPUT"
+            ENV="dev"
+            SKIP_TF="false"
           fi
+
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          IMAGE_TAG="${ENV}-${SHORT_SHA}"
+
+          echo "environment=${ENV}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+
+          if [[ "${SKIP_TF}" == "true" ]]; then
+            echo "run_terraform=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_terraform=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "## Environment Decision" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Environment**: ${ENV}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Image Tag**: ${IMAGE_TAG}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Terraform**: $([[ ${SKIP_TF} == 'true' ]] && echo 'Skipped' || echo 'Enabled')" >> "$GITHUB_STEP_SUMMARY"
 
   # ---------------------------------------------------------------------------
   # Build & Push: ACRへイメージをビルド・プッシュ
@@ -49,7 +92,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: set-environment
     environment: ${{ needs.set-environment.outputs.environment }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -71,7 +113,7 @@ jobs:
           push: true
           tags: |
             ${{ env.ACR_LOGIN_SERVER }}/fluentedge-backend:${{ needs.set-environment.outputs.image_tag }}
-            ${{ env.ACR_LOGIN_SERVER }}/fluentedge-backend:latest
+            ${{ env.ACR_LOGIN_SERVER }}/fluentedge-backend:${{ needs.set-environment.outputs.environment }}-latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -82,21 +124,23 @@ jobs:
           push: true
           tags: |
             ${{ env.ACR_LOGIN_SERVER }}/fluentedge-frontend:${{ needs.set-environment.outputs.image_tag }}
-            ${{ env.ACR_LOGIN_SERVER }}/fluentedge-frontend:latest
+            ${{ env.ACR_LOGIN_SERVER }}/fluentedge-frontend:${{ needs.set-environment.outputs.environment }}-latest
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   # ---------------------------------------------------------------------------
-  # Deploy Infrastructure: Bicepでインフラデプロイ
+  # Terraform Plan: インフラ変更の確認
   # ---------------------------------------------------------------------------
-  deploy-infra:
-    name: Deploy Infrastructure
+  terraform-plan:
+    name: Terraform Plan
     runs-on: ubuntu-latest
     needs: [set-environment, build-and-push]
+    if: needs.set-environment.outputs.run_terraform == 'true'
     environment: ${{ needs.set-environment.outputs.environment }}
-
+    outputs:
+      has_changes: ${{ steps.plan.outputs.has_changes }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -106,16 +150,86 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy Bicep template
-        uses: azure/arm-deploy@v2
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
-          resourceGroupName: ${{ env.RESOURCE_GROUP }}
-          template: ./infra/main.bicep
-          parameters: >-
-            environment=${{ needs.set-environment.outputs.environment }}
-            acrLoginServer=${{ secrets.ACR_LOGIN_SERVER }}
-            imageTag=${{ needs.set-environment.outputs.image_tag }}
-          failOnStdErr: false
+          terraform_version: "1.7"
+
+      - name: Terraform Init
+        working-directory: infra/terraform
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ secrets.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=${{ needs.set-environment.outputs.environment }}.terraform.tfstate"
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: infra/terraform
+        run: |
+          terraform plan \
+            -var="environment=${{ needs.set-environment.outputs.environment }}" \
+            -var="acr_login_server=${{ secrets.ACR_LOGIN_SERVER }}" \
+            -var="image_tag=${{ needs.set-environment.outputs.image_tag }}" \
+            -out=tfplan \
+            -detailed-exitcode || EXIT_CODE=$?
+
+          if [[ "${EXIT_CODE}" == "2" ]]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload Terraform plan
+        if: steps.plan.outputs.has_changes == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ needs.set-environment.outputs.environment }}
+          path: infra/terraform/tfplan
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # Terraform Apply: インフラデプロイ
+  # ---------------------------------------------------------------------------
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    needs: [set-environment, terraform-plan]
+    if: needs.terraform-plan.outputs.has_changes == 'true'
+    environment: ${{ needs.set-environment.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7"
+
+      - name: Terraform Init
+        working-directory: infra/terraform
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ secrets.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=${{ needs.set-environment.outputs.environment }}.terraform.tfstate"
+
+      - name: Download Terraform plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ needs.set-environment.outputs.environment }}
+          path: infra/terraform
+
+      - name: Terraform Apply
+        working-directory: infra/terraform
+        run: terraform apply -auto-approve tfplan
 
   # ---------------------------------------------------------------------------
   # Deploy Apps: Container Appsを更新
@@ -123,9 +237,13 @@ jobs:
   deploy-apps:
     name: Deploy Container Apps
     runs-on: ubuntu-latest
-    needs: [set-environment, deploy-infra]
+    needs: [set-environment, build-and-push, terraform-plan]
+    # terraform-plan が skip された場合、または apply が不要な場合でもデプロイ実行
+    if: |
+      always() &&
+      needs.build-and-push.result == 'success' &&
+      (needs.terraform-plan.result == 'success' || needs.terraform-plan.result == 'skipped')
     environment: ${{ needs.set-environment.outputs.environment }}
-
     steps:
       - name: Azure Login
         uses: azure/login@v2
@@ -147,12 +265,32 @@ jobs:
             --image ${{ env.ACR_LOGIN_SERVER }}/fluentedge-frontend:${{ needs.set-environment.outputs.image_tag }}
 
       - name: Run database migrations
-        if: needs.set-environment.outputs.environment == 'production'
+        if: needs.set-environment.outputs.environment != 'dev'
         run: |
           az containerapp exec \
             --name fluentedge-backend-${{ needs.set-environment.outputs.environment }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --command "alembic upgrade head"
+
+      - name: Health check verification
+        run: |
+          BACKEND_URL=$(az containerapp show \
+            --name fluentedge-backend-${{ needs.set-environment.outputs.environment }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+
+          echo "Backend URL: https://${BACKEND_URL}"
+
+          # ヘルスチェック: 最大5回リトライ
+          for i in $(seq 1 5); do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://${BACKEND_URL}/health" || true)
+            if [[ "${HTTP_CODE}" == "200" ]]; then
+              echo "Health check passed!"
+              break
+            fi
+            echo "Attempt ${i}: HTTP ${HTTP_CODE}, retrying in 10s..."
+            sleep 10
+          done
 
       - name: Deployment summary
         run: |
@@ -161,6 +299,7 @@ jobs:
           echo "- **Image Tag**: ${{ needs.set-environment.outputs.image_tag }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Commit**: ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Triggered by**: ${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Terraform**: ${{ needs.set-environment.outputs.run_terraform }}" >> "$GITHUB_STEP_SUMMARY"
 
   # ---------------------------------------------------------------------------
   # Production Gate: 本番デプロイ前の手動承認
@@ -176,3 +315,24 @@ jobs:
     steps:
       - name: Approval checkpoint
         run: echo "Production deployment approved by ${{ github.actor }}"
+
+  # ---------------------------------------------------------------------------
+  # Rollback 通知: デプロイ失敗時の通知
+  # ---------------------------------------------------------------------------
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [set-environment, deploy-apps]
+    if: failure()
+    steps:
+      - name: Create failure summary
+        run: |
+          echo "## Deployment FAILED" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Environment**: ${{ needs.set-environment.outputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Image Tag**: ${{ needs.set-environment.outputs.image_tag }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Commit**: ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Rollback Command" >> "$GITHUB_STEP_SUMMARY"
+          echo '```bash' >> "$GITHUB_STEP_SUMMARY"
+          echo "az containerapp update --name fluentedge-backend-${{ needs.set-environment.outputs.environment }} --resource-group ${{ env.RESOURCE_GROUP }} --image <previous-image-tag>" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

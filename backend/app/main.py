@@ -5,6 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import engine
+from app.logging_config import setup_logging
+from app.middleware.error_handler import register_error_handlers
+from app.middleware.logging_middleware import RequestLoggingMiddleware
 from app.routers import (
     auth, health, talk, speaking, review, analytics,
     # Phase 2: 音声統合
@@ -18,6 +21,7 @@ from app.routers import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    setup_logging()
     yield
     await engine.dispose()
 
@@ -36,6 +40,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestLoggingMiddleware)
+
+register_error_handlers(app)
 
 # Phase 1 (MVP)
 app.include_router(health.router)

@@ -36,3 +36,12 @@ stripe==11.4.1
 
 # Audio Processing (Phase 2-4: 音声分析)
 numpy==1.26.4
+
+# Structured Logging
+structlog==24.4.0
+
+# Multi-cloud LLM providers
+anthropic==0.43.0
+boto3==1.35.0
+google-cloud-aiplatform==1.75.0
+google-auth==2.37.0

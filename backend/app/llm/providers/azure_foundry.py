@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 # モデルエイリアス → Azure OpenAI デプロイ名マッピング
 MODEL_MAP = {
-    "haiku": settings.gpt5_fast_model,       # gpt-5-nano（高速・低コスト）
-    "sonnet": settings.gpt5_smart_model,     # gpt-5-mini（バランス型）
-    "opus": settings.gpt5_powerful_model,    # gpt-5（最高性能）
+    "haiku": settings.gpt5_fast_model,  # gpt-5-nano（高速・低コスト）
+    "sonnet": settings.gpt5_smart_model,  # gpt-5-mini（バランス型）
+    "opus": settings.gpt5_powerful_model,  # gpt-5（最高性能）
 }
 
 

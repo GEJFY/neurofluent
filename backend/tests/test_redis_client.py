@@ -36,7 +36,10 @@ class TestRedisClient:
     @pytest.mark.asyncio
     async def test_init_redis_failure(self):
         """Redis接続失敗時はNoneを返す"""
-        with patch("app.redis_client.redis.from_url", side_effect=Exception("Connection refused")):
+        with patch(
+            "app.redis_client.redis.from_url",
+            side_effect=Exception("Connection refused"),
+        ):
             result = await init_redis()
             assert result is None
 

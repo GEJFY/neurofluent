@@ -31,10 +31,13 @@ class TestInitMonitoring:
             mock_settings.environment = "dev"
 
             # configure_azure_monitor は init_monitoring 内でインポートされる
-            with patch.dict("sys.modules", {"azure.monitor.opentelemetry": mock_module}):
+            with patch.dict(
+                "sys.modules", {"azure.monitor.opentelemetry": mock_module}
+            ):
                 from importlib import reload
 
                 import app.monitoring
+
                 reload(app.monitoring)
                 app.monitoring.init_monitoring()
                 mock_configure.assert_called_once()

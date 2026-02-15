@@ -44,7 +44,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         )
 
         if not allowed:
-            logger.warning("rate_limit_exceeded", key=key, current=current_count, limit=limit)
+            logger.warning(
+                "rate_limit_exceeded", key=key, current=current_count, limit=limit
+            )
             return JSONResponse(
                 status_code=429,
                 content={
@@ -66,7 +68,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         remaining = max(0, limit - current_count)
         response.headers["X-RateLimit-Limit"] = str(limit)
         response.headers["X-RateLimit-Remaining"] = str(remaining)
-        response.headers["X-RateLimit-Reset"] = str(int(time.time()) + self.WINDOW_SECONDS)
+        response.headers["X-RateLimit-Reset"] = str(
+            int(time.time()) + self.WINDOW_SECONDS
+        )
         return response
 
     def _identify_client(self, request: Request) -> tuple[str, int]:

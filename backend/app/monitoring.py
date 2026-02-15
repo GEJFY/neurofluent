@@ -10,7 +10,9 @@ logger = structlog.get_logger()
 def init_monitoring() -> None:
     """Application Insights を初期化（Connection String 未設定時はスキップ）"""
     if not settings.appinsights_connection_string:
-        logger.info("monitoring_skipped", reason="APPINSIGHTS_CONNECTION_STRING not configured")
+        logger.info(
+            "monitoring_skipped", reason="APPINSIGHTS_CONNECTION_STRING not configured"
+        )
         return
 
     from azure.monitor.opentelemetry import configure_azure_monitor
@@ -31,4 +33,8 @@ def init_monitoring() -> None:
         },
     )
 
-    logger.info("monitoring_initialized", provider="application_insights", environment=settings.environment)
+    logger.info(
+        "monitoring_initialized",
+        provider="application_insights",
+        environment=settings.environment,
+    )

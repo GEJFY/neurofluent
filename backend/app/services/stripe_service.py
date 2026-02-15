@@ -326,7 +326,12 @@ class StripeService:
                 last_exception = e
                 if attempt < self.MAX_RETRIES - 1:
                     delay = self.RETRY_BASE_DELAY * (2**attempt)
-                    logger.warning("stripe_retry_error", attempt=attempt + 1, error=str(e), delay=delay)
+                    logger.warning(
+                        "stripe_retry_error",
+                        attempt=attempt + 1,
+                        error=str(e),
+                        delay=delay,
+                    )
                     await asyncio.sleep(delay)
 
         if last_exception:
@@ -455,7 +460,9 @@ class StripeService:
 
         # Webhook重複排除
         if event_id and await self._is_webhook_duplicate(event_id):
-            logger.info("stripe_webhook_duplicate", event_id=event_id, event_type=event_type)
+            logger.info(
+                "stripe_webhook_duplicate", event_id=event_id, event_type=event_type
+            )
             return {"event_type": event_type, "status": "duplicate"}
 
         logger.info("stripe_webhook_received", event_id=event_id, event_type=event_type)

@@ -44,8 +44,13 @@ class TestSettings:
 
     def test_cors_origins_list_multiple(self):
         """CORS origins のリスト変換（複数）"""
-        s = self._make(backend_cors_origins="http://localhost:3000,https://app.example.com")
-        assert s.cors_origins_list == ["http://localhost:3000", "https://app.example.com"]
+        s = self._make(
+            backend_cors_origins="http://localhost:3000,https://app.example.com"
+        )
+        assert s.cors_origins_list == [
+            "http://localhost:3000",
+            "https://app.example.com",
+        ]
 
     def test_cors_origins_list_with_spaces(self):
         """CORS origins のリスト変換（スペース含む）"""

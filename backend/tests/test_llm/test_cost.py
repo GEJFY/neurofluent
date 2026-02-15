@@ -57,10 +57,19 @@ class TestPricingTable:
 
     def test_all_providers_have_three_tiers(self):
         """全プロバイダーがsonnet/haiku/opusの3階層を持つ"""
-        providers = {"azure_foundry", "anthropic", "bedrock", "vertex", "local", "openai_compat"}
+        providers = {
+            "azure_foundry",
+            "anthropic",
+            "bedrock",
+            "vertex",
+            "local",
+            "openai_compat",
+        }
         for provider in providers:
             for alias in ("sonnet", "haiku", "opus"):
-                assert (provider, alias) in PRICING_TABLE, f"Missing: ({provider}, {alias})"
+                assert (provider, alias) in PRICING_TABLE, (
+                    f"Missing: ({provider}, {alias})"
+                )
 
 
 class TestNormalizeModelAlias:
@@ -131,7 +140,9 @@ class TestEstimateCost:
 
     def test_unknown_model_uses_default(self):
         """不明なモデルはデフォルト料金を使用"""
-        result = estimate_cost("unknown_provider", "unknown_model", 1_000_000, 1_000_000)
+        result = estimate_cost(
+            "unknown_provider", "unknown_model", 1_000_000, 1_000_000
+        )
         assert result["input_cost_usd"] == DEFAULT_PRICING.input_price_per_m
         assert result["output_cost_usd"] == DEFAULT_PRICING.output_price_per_m
 

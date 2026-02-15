@@ -22,9 +22,9 @@ class ModelPricing:
 # キー: (provider, model_alias) または (provider, full_model_id)
 PRICING_TABLE: dict[tuple[str, str], ModelPricing] = {
     # === Azure AI Foundry (GPT-5 via Azure OpenAI) ===
-    ("azure_foundry", "sonnet"): ModelPricing(0.25, 2.0),   # gpt-5-mini
-    ("azure_foundry", "haiku"): ModelPricing(0.05, 0.40),   # gpt-5-nano
-    ("azure_foundry", "opus"): ModelPricing(1.25, 10.0),    # gpt-5
+    ("azure_foundry", "sonnet"): ModelPricing(0.25, 2.0),  # gpt-5-mini
+    ("azure_foundry", "haiku"): ModelPricing(0.05, 0.40),  # gpt-5-nano
+    ("azure_foundry", "opus"): ModelPricing(1.25, 10.0),  # gpt-5
     # === Anthropic Direct API ===
     ("anthropic", "sonnet"): ModelPricing(3.0, 15.0),
     ("anthropic", "haiku"): ModelPricing(0.80, 4.0),

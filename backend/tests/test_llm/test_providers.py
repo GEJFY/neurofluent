@@ -67,14 +67,17 @@ class TestAzureFoundryProvider:
 
     def _patch_settings(self):
         """Azure Foundry用の設定をモック"""
-        return patch("app.llm.providers.azure_foundry.settings", **{
-            "azure_ai_foundry_endpoint": self.MOCK_ENDPOINT,
-            "azure_ai_foundry_api_key": self.MOCK_API_KEY,
-            "azure_openai_api_version": self.MOCK_API_VERSION,
-            "gpt5_fast_model": "gpt-5-nano",
-            "gpt5_smart_model": "gpt-5-mini",
-            "gpt5_powerful_model": "gpt-5",
-        })
+        return patch(
+            "app.llm.providers.azure_foundry.settings",
+            **{
+                "azure_ai_foundry_endpoint": self.MOCK_ENDPOINT,
+                "azure_ai_foundry_api_key": self.MOCK_API_KEY,
+                "azure_openai_api_version": self.MOCK_API_VERSION,
+                "gpt5_fast_model": "gpt-5-nano",
+                "gpt5_smart_model": "gpt-5-mini",
+                "gpt5_powerful_model": "gpt-5",
+            },
+        )
 
     def _mock_url(self, deployment: str) -> str:
         """モック対象のURLを生成"""
@@ -89,9 +92,14 @@ class TestAzureFoundryProvider:
         """正常なchat呼び出しがテキスト応答を返す"""
         with self._patch_settings():
             # MODEL_MAPはモジュールロード時に評価されるのでpatchが必要
-            with patch("app.llm.providers.azure_foundry.MODEL_MAP", {
-                "haiku": "gpt-5-nano", "sonnet": "gpt-5-mini", "opus": "gpt-5",
-            }):
+            with patch(
+                "app.llm.providers.azure_foundry.MODEL_MAP",
+                {
+                    "haiku": "gpt-5-nano",
+                    "sonnet": "gpt-5-mini",
+                    "opus": "gpt-5",
+                },
+            ):
                 provider = AzureFoundryProvider()
 
                 respx.post(self._mock_url("gpt-5-nano")).mock(
@@ -112,9 +120,14 @@ class TestAzureFoundryProvider:
     async def test_azure_foundry_chat_json(self):
         """chat_jsonがJSON応答をパースして返す"""
         with self._patch_settings():
-            with patch("app.llm.providers.azure_foundry.MODEL_MAP", {
-                "haiku": "gpt-5-nano", "sonnet": "gpt-5-mini", "opus": "gpt-5",
-            }):
+            with patch(
+                "app.llm.providers.azure_foundry.MODEL_MAP",
+                {
+                    "haiku": "gpt-5-nano",
+                    "sonnet": "gpt-5-mini",
+                    "opus": "gpt-5",
+                },
+            ):
                 provider = AzureFoundryProvider()
 
                 json_text = json.dumps({"key": "value", "count": 42})
@@ -133,9 +146,14 @@ class TestAzureFoundryProvider:
     async def test_azure_foundry_get_usage_info(self):
         """get_usage_infoがトークン使用量を含むレスポンスを返す"""
         with self._patch_settings():
-            with patch("app.llm.providers.azure_foundry.MODEL_MAP", {
-                "haiku": "gpt-5-nano", "sonnet": "gpt-5-mini", "opus": "gpt-5",
-            }):
+            with patch(
+                "app.llm.providers.azure_foundry.MODEL_MAP",
+                {
+                    "haiku": "gpt-5-nano",
+                    "sonnet": "gpt-5-mini",
+                    "opus": "gpt-5",
+                },
+            ):
                 provider = AzureFoundryProvider()
 
                 respx.post(self._mock_url("gpt-5-nano")).mock(
@@ -161,9 +179,14 @@ class TestAzureFoundryProvider:
     async def test_azure_foundry_api_error(self):
         """APIエラー時にHTTPStatusErrorが発生する"""
         with self._patch_settings():
-            with patch("app.llm.providers.azure_foundry.MODEL_MAP", {
-                "haiku": "gpt-5-nano", "sonnet": "gpt-5-mini", "opus": "gpt-5",
-            }):
+            with patch(
+                "app.llm.providers.azure_foundry.MODEL_MAP",
+                {
+                    "haiku": "gpt-5-nano",
+                    "sonnet": "gpt-5-mini",
+                    "opus": "gpt-5",
+                },
+            ):
                 provider = AzureFoundryProvider()
 
                 respx.post(self._mock_url("gpt-5-nano")).mock(
@@ -180,9 +203,14 @@ class TestAzureFoundryProvider:
     async def test_azure_foundry_chat_with_system(self):
         """systemプロンプト指定時にOpenAI形式のsystemメッセージに変換される"""
         with self._patch_settings():
-            with patch("app.llm.providers.azure_foundry.MODEL_MAP", {
-                "haiku": "gpt-5-nano", "sonnet": "gpt-5-mini", "opus": "gpt-5",
-            }):
+            with patch(
+                "app.llm.providers.azure_foundry.MODEL_MAP",
+                {
+                    "haiku": "gpt-5-nano",
+                    "sonnet": "gpt-5-mini",
+                    "opus": "gpt-5",
+                },
+            ):
                 provider = AzureFoundryProvider()
 
                 route = respx.post(self._mock_url("gpt-5-mini")).mock(
@@ -197,7 +225,10 @@ class TestAzureFoundryProvider:
 
                 request_body = json.loads(route.calls[0].request.content)
                 assert request_body["messages"][0]["role"] == "system"
-                assert request_body["messages"][0]["content"] == "You are a business English tutor."
+                assert (
+                    request_body["messages"][0]["content"]
+                    == "You are a business English tutor."
+                )
                 assert request_body["messages"][1]["role"] == "user"
 
     @pytest.mark.asyncio
@@ -205,9 +236,14 @@ class TestAzureFoundryProvider:
     async def test_azure_foundry_model_mapping(self):
         """モデルエイリアスが正しいデプロイ名に解決される"""
         with self._patch_settings():
-            with patch("app.llm.providers.azure_foundry.MODEL_MAP", {
-                "haiku": "gpt-5-nano", "sonnet": "gpt-5-mini", "opus": "gpt-5",
-            }):
+            with patch(
+                "app.llm.providers.azure_foundry.MODEL_MAP",
+                {
+                    "haiku": "gpt-5-nano",
+                    "sonnet": "gpt-5-mini",
+                    "opus": "gpt-5",
+                },
+            ):
                 provider = AzureFoundryProvider()
                 assert provider._resolve_model("haiku") == "gpt-5-nano"
                 assert provider._resolve_model("sonnet") == "gpt-5-mini"

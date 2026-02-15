@@ -57,7 +57,11 @@ async def _check_database() -> dict:
         return {"status": "healthy", "response_time_ms": _elapsed(start)}
     except Exception as e:
         logger.error("health_check_db_failed", error=str(e))
-        return {"status": "unhealthy", "response_time_ms": _elapsed(start), "error": str(e)[:200]}
+        return {
+            "status": "unhealthy",
+            "response_time_ms": _elapsed(start),
+            "error": str(e)[:200],
+        }
 
 
 async def _check_redis() -> dict:
@@ -67,12 +71,20 @@ async def _check_redis() -> dict:
 
         client = get_redis()
         if client is None:
-            return {"status": "unhealthy", "response_time_ms": _elapsed(start), "error": "Not initialized"}
+            return {
+                "status": "unhealthy",
+                "response_time_ms": _elapsed(start),
+                "error": "Not initialized",
+            }
         await client.ping()
         return {"status": "healthy", "response_time_ms": _elapsed(start)}
     except Exception as e:
         logger.error("health_check_redis_failed", error=str(e))
-        return {"status": "unhealthy", "response_time_ms": _elapsed(start), "error": str(e)[:200]}
+        return {
+            "status": "unhealthy",
+            "response_time_ms": _elapsed(start),
+            "error": str(e)[:200],
+        }
 
 
 async def _check_llm_provider() -> dict:
@@ -90,11 +102,19 @@ async def _check_llm_provider() -> dict:
             }
 
         if not url:
-            return {"status": "degraded", "response_time_ms": _elapsed(start), "error": "Endpoint not configured"}
+            return {
+                "status": "degraded",
+                "response_time_ms": _elapsed(start),
+                "error": "Endpoint not configured",
+            }
 
         async with httpx.AsyncClient(timeout=3.0) as client:
             await client.head(url)
-        return {"status": "healthy", "response_time_ms": _elapsed(start), "provider": settings.llm_provider}
+        return {
+            "status": "healthy",
+            "response_time_ms": _elapsed(start),
+            "provider": settings.llm_provider,
+        }
     except Exception as e:
         logger.warning("health_check_llm_failed", error=str(e))
         return {

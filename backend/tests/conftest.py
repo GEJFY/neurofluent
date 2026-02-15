@@ -12,10 +12,20 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import JSON, event
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.database import Base, get_db
 from app.main import app
+
+# SQLite は PostgreSQL の JSONB 型をサポートしないため、JSON にマッピング
+# これにより aiosqlite テスト環境でも create_all が動作する
+JSONB_TO_JSON_DONE = False
+for table in Base.metadata.tables.values():
+    for column in table.columns:
+        if isinstance(column.type, JSONB):
+            column.type = JSON()
 
 # テスト用DBのURL（テスト実行時はsqliteを使用）
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"

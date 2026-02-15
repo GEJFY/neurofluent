@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import TalkPage from '@/app/talk/page'
 
@@ -15,6 +16,11 @@ vi.mock('@/components/chat/ChatWindow', () => ({
 }))
 
 // talk-storeモック（セッション未開始状態）
+const mockStartSession = vi.fn()
+const mockSendMessage = vi.fn()
+const mockReset = vi.fn()
+const mockClearError = vi.fn()
+
 vi.mock('@/lib/stores/talk-store', () => ({
   useTalkStore: () => ({
     currentSession: null,
@@ -22,10 +28,10 @@ vi.mock('@/lib/stores/talk-store', () => ({
     isLoading: false,
     isSending: false,
     error: null,
-    startSession: vi.fn(),
-    sendMessage: vi.fn(),
-    reset: vi.fn(),
-    clearError: vi.fn(),
+    startSession: mockStartSession,
+    sendMessage: mockSendMessage,
+    reset: mockReset,
+    clearError: mockClearError,
   }),
 }))
 
@@ -48,19 +54,18 @@ describe('TalkPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('モード選択肢が表示される', () => {
+  it('全モード選択肢が表示される', () => {
     render(<TalkPage />)
 
     expect(screen.getByText('Casual Chat')).toBeInTheDocument()
-    expect(screen.getByText('Business')).toBeInTheDocument()
+    expect(screen.getByText('Business Meeting')).toBeInTheDocument()
     expect(screen.getByText('Interview')).toBeInTheDocument()
   })
 
-  it('Coming Soonラベルが非対応モードに表示される', () => {
+  it('全モードが有効でComing Soonラベルがない', () => {
     render(<TalkPage />)
 
-    const comingSoonLabels = screen.getAllByText('(Coming Soon)')
-    expect(comingSoonLabels.length).toBe(2) // Business と Interview
+    expect(screen.queryByText('(Coming Soon)')).not.toBeInTheDocument()
   })
 
   it('Start Talkingボタンが表示される', () => {
@@ -75,5 +80,24 @@ describe('TalkPage', () => {
     render(<TalkPage />)
 
     expect(screen.getByText('Select Mode')).toBeInTheDocument()
+  })
+
+  it('モード選択ボタンがクリックできる', async () => {
+    const user = userEvent.setup()
+    render(<TalkPage />)
+
+    const meetingButton = screen.getByText('Business Meeting').closest('button')
+    expect(meetingButton).not.toBeDisabled()
+    await user.click(meetingButton!)
+  })
+
+  it('Start TalkingクリックでstartSessionが呼ばれる', async () => {
+    const user = userEvent.setup()
+    render(<TalkPage />)
+
+    const startButton = screen.getByRole('button', { name: /Start Talking/ })
+    await user.click(startButton)
+
+    expect(mockStartSession).toHaveBeenCalledWith('casual_chat')
   })
 })

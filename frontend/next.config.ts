@@ -31,6 +31,16 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: "standalone",
+  // 画像最適化設定
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
+  // 不要なソースマップを本番で無効化
+  productionBrowserSourceMaps: false,
+  // パッケージ最適化
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

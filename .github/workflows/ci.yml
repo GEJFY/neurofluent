@@ -75,6 +75,16 @@ jobs:
           LLM_PROVIDER: azure_foundry
         run: |
           pytest -v --tb=short --cov=app --cov-report=xml --cov-report=term-missing
+      - name: Export OpenAPI schema
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/fluentedge_test
+          DATABASE_URL_SYNC: postgresql://test:test@localhost:5432/fluentedge_test
+          REDIS_URL: redis://localhost:6379/0
+          ENVIRONMENT: test
+          JWT_SECRET_KEY: test-secret-key
+          LLM_PROVIDER: azure_foundry
+        run: python scripts/export_openapi.py > /dev/null
       - name: Upload coverage
         if: github.event_name == 'pull_request'
         uses: codecov/codecov-action@v4

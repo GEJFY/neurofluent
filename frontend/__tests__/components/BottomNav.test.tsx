@@ -10,7 +10,7 @@ vi.mock('next/link', () => ({
 }))
 
 describe('BottomNav', () => {
-  it('モバイルナビゲーションリンクが表示される', () => {
+  it('全ナビゲーションリンクが表示される', () => {
     render(<BottomNav />)
 
     expect(screen.getByText('Home')).toBeInTheDocument()
@@ -20,16 +20,7 @@ describe('BottomNav', () => {
     expect(screen.getByText('Review')).toBeInTheDocument()
   })
 
-  it('アクティブなタブがハイライトされる', () => {
-    // usePathname は vitest.setup.ts で '/' を返す
-    render(<BottomNav />)
-
-    // Home リンク（href="/"）がアクティブクラスを持つ
-    const homeLink = screen.getByText('Home').closest('a')
-    expect(homeLink).toHaveClass('text-primary')
-  })
-
-  it('各リンクのhrefが正しい', () => {
+  it('リンクが正しいhrefを持つ', () => {
     render(<BottomNav />)
 
     expect(screen.getByText('Home').closest('a')).toHaveAttribute('href', '/')
@@ -37,6 +28,13 @@ describe('BottomNav', () => {
     expect(screen.getByText('Listen').closest('a')).toHaveAttribute('href', '/listening')
     expect(screen.getByText('Speak').closest('a')).toHaveAttribute('href', '/speaking')
     expect(screen.getByText('Review').closest('a')).toHaveAttribute('href', '/review')
+  })
+
+  it('アクティブリンクがハイライトされる', () => {
+    render(<BottomNav />)
+
+    const homeLink = screen.getByText('Home').closest('a')
+    expect(homeLink).toHaveClass('text-primary')
   })
 
   it('5つのナビゲーションアイテムがある', () => {

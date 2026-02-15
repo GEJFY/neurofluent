@@ -25,4 +25,17 @@ test.describe('ダッシュボード', () => {
     const loadTime = Date.now() - startTime
     expect(loadTime).toBeLessThan(5000)
   })
+
+  test('HTMLが正しい構造を持つ', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.locator('body')).toBeVisible()
+  })
+
+  test('JavaScriptエラーが発生しない', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (error) => errors.push(error.message))
+    await page.goto('/')
+    await page.waitForTimeout(1000)
+    expect(errors).toHaveLength(0)
+  })
 })

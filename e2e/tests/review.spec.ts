@@ -21,4 +21,19 @@ test.describe('Spaced Review ページ', () => {
     const bodyText = await page.locator('body').textContent()
     expect(bodyText).toBeTruthy()
   })
+
+  test('ページ読み込みパフォーマンス', async ({ page }) => {
+    const start = Date.now()
+    await page.goto('/review')
+    await expect(page.locator('body')).toBeVisible()
+    expect(Date.now() - start).toBeLessThan(5000)
+  })
+
+  test('JavaScriptエラーが発生しない', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (error) => errors.push(error.message))
+    await page.goto('/review')
+    await page.waitForTimeout(1000)
+    expect(errors).toHaveLength(0)
+  })
 })

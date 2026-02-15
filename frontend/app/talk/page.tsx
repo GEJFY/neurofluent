@@ -15,8 +15,8 @@ import { useTalkStore } from "@/lib/stores/talk-store";
 
 const TALK_MODES = [
   { id: "casual_chat", label: "Casual Chat", description: "自由に英会話を楽しもう", disabled: false },
-  { id: "business", label: "Business", description: "ビジネス英語の練習", disabled: true },
-  { id: "interview", label: "Interview", description: "面接対策", disabled: true },
+  { id: "meeting", label: "Business Meeting", description: "ビジネス会議のシミュレーション", disabled: false },
+  { id: "interview", label: "Interview", description: "面接対策の練習", disabled: false },
 ] as const;
 
 export default function TalkPage() {
@@ -123,11 +123,6 @@ export default function TalkPage() {
                       <div>
                         <p className="text-sm font-medium text-[var(--color-text-primary)]">
                           {mode.label}
-                          {mode.disabled && (
-                            <span className="ml-2 text-[10px] text-[var(--color-text-muted)]">
-                              (Coming Soon)
-                            </span>
-                          )}
                         </p>
                         <p className="text-xs text-[var(--color-text-muted)]">
                           {mode.description}
@@ -163,9 +158,7 @@ export default function TalkPage() {
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse-slow" />
                 <span className="text-sm font-medium text-[var(--color-text-secondary)]">
-                  {currentSession.mode === "casual_chat"
-                    ? "Casual Chat"
-                    : currentSession.mode}{" "}
+                  {TALK_MODES.find(m => m.id === currentSession.mode)?.label ?? currentSession.mode}{" "}
                   Session
                 </span>
               </div>

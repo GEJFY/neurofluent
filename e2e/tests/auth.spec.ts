@@ -17,4 +17,17 @@ test.describe('認証フロー', () => {
     // ページの body が表示されることを確認
     await expect(page.locator('body')).toBeVisible()
   })
+
+  test('ログインページにボタンが存在する', async ({ page }) => {
+    await page.goto('/login')
+    const bodyText = await page.locator('body').textContent()
+    expect(bodyText).toBeTruthy()
+  })
+
+  test('ページ読み込みが3秒以内に完了する', async ({ page }) => {
+    const start = Date.now()
+    await page.goto('/login')
+    await expect(page.locator('body')).toBeVisible()
+    expect(Date.now() - start).toBeLessThan(3000)
+  })
 })

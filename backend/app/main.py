@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import engine
+from app.keyvault import load_secrets_from_keyvault
 from app.logging_config import setup_logging
 from app.middleware.error_handler import register_error_handlers
 from app.middleware.logging_middleware import RequestLoggingMiddleware
@@ -35,6 +36,7 @@ from app.routers import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    load_secrets_from_keyvault()
     setup_logging()
     init_monitoring()
     await init_redis()

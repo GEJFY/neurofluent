@@ -37,6 +37,11 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+
     const fetchDashboard = async () => {
       try {
         const data = await api.getDashboard();
@@ -50,7 +55,7 @@ export default function DashboardPage() {
     };
 
     fetchDashboard();
-  }, []);
+  }, [user]);
 
   return (
     <AppShell>

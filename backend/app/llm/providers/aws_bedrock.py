@@ -26,6 +26,7 @@ except ImportError:
 
 # Bedrockモデルマッピング
 MODEL_MAP = {
+    "opus": settings.aws_bedrock_model_opus,
     "sonnet": settings.aws_bedrock_model_sonnet,
     "haiku": settings.aws_bedrock_model_haiku,
 }

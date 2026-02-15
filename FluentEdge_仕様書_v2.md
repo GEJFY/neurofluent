@@ -2,8 +2,8 @@
 
 ## AI-Powered Business English Accelerator
 
-**バージョン**: 2.1
-**更新日**: 2026-02-14
+**バージョン**: 2.2
+**更新日**: 2026-02-15
 **ステータス**: レビュー待ち
 
 ---
@@ -78,8 +78,8 @@
 │                          │     │      ││     ││+ pgvector    │       │
 ├─────────────────────────┤     │Realtime│Pron.││              │       │
 │ Authentication            │     │API   ││Assess│└──────────────┘       │
-│ Microsoft Entra ID        │     │GPT-4o││ment ││                      │
-│ (B2C / External ID)      │     │Whisper││     ││┌──────────────┐      │
+│ Microsoft Entra ID        │     │GPT-5 ││ment ││                      │
+│ (B2C / External ID)      │     │STT   ││     ││┌──────────────┐      │
 │                          │     │TTS   ││     │││Azure Cache    │      │
 │                          │     └──────┘└────┘││for Redis      │      │
 │                          │                    │└──────────────┘      │
@@ -103,7 +103,7 @@
 | **音声入力 (STT)** | gpt-4o-transcribe | Azure OpenAI Service | 高精度、日本人英語対応 |
 | **音声出力 (TTS)** | gpt-4o-mini-tts（スタイル制御） | Azure OpenAI Service | 自然な音声、トーン・速度制御 |
 | **発音評価** | Pronunciation Assessment | Azure Speech Services | 音素レベルの発音スコアリング |
-| **LLM（会話以外）** | Claude Sonnet 4.5 / Haiku 4.5 | Azure AI Foundry (Marketplace) | フィードバック生成、カリキュラム最適化 |
+| **LLM（会話以外）** | Claude Opus 4.6 / Sonnet 4.5 / Haiku 4.5 | Azure AI Foundry (Marketplace) | フィードバック生成、カリキュラム最適化 |
 | **バックエンド** | FastAPI (Python 3.11) | Azure Container Apps (Consumption) | Scale-to-zero、WebSocket対応 |
 | **DB** | PostgreSQL 16 + pgvector | Azure Database for PostgreSQL Flexible Server | ベクトル検索対応、HA対応 |
 | **キャッシュ** | Redis 7 | Azure Cache for Redis (Standard C1) | セッション管理、レート制限 |
@@ -126,8 +126,8 @@
 | **会話フィードバック生成** | Claude Haiku 4.5 | 低コスト、構造化JSON出力が得意 |
 | **表現改善・添削** | Claude Sonnet 4.5 | 高品質な言語分析 |
 | **瞬間英作文の採点** | Claude Haiku 4.5 | 高速・低コスト |
-| **カリキュラム最適化** | Claude Sonnet 4.5 | 複雑な分析が必要 |
-| **コンテンツ生成（バッチ）** | GPT-4o（Batch API: 50%割引） | 大量生成タスクのコスト削減 |
+| **カリキュラム最適化** | Claude Opus 4.6 | 複雑な分析が必要 |
+| **コンテンツ生成（バッチ）** | GPT-5（Batch API: 50%割引） | 大量生成タスクのコスト削減 |
 | **発音評価** | Azure Speech Services Pronunciation Assessment | 音素レベルスコアリングの専用API |
 
 ### 2.4 リアルタイム会話アーキテクチャ
@@ -1787,54 +1787,54 @@ services:
 ## 17. 開発フェーズ（改訂版）
 
 ### Phase 0: 基盤構築（2週間）
-- [ ] GitHubリポジトリ初期化（モノレポ構成）
-- [ ] Bicep IaC でDev環境プロビジョニング
+- [x] GitHubリポジトリ初期化（モノレポ構成）
+- [x] Bicep IaC でDev環境プロビジョニング
   - Container Apps, PostgreSQL, Redis, Key Vault, ACR
-- [ ] CI/CDパイプライン構築（ci.yml + deploy-dev.yml）
-- [ ] Docker開発環境（docker-compose.yml）
-- [ ] Backend骨格: FastAPI + Alembic + ヘルスチェック
-- [ ] Frontend骨格: Next.js 15 + Tailwind + shadcn/ui
-- [ ] 認証: Microsoft Entra External ID 基本設定
+- [x] CI/CDパイプライン構築（ci.yml + deploy-dev.yml）
+- [x] Docker開発環境（docker-compose.yml）
+- [x] Backend骨格: FastAPI + Alembic + ヘルスチェック
+- [x] Frontend骨格: Next.js 15 + Tailwind + shadcn/ui
+- [x] 認証: Microsoft Entra External ID 基本設定
 
 ### Phase 1: MVP — テキスト会話（6週間）
-- [ ] DBスキーマ作成（Alembic migration）
-- [ ] Claude API連携（Azure AI Foundry経由）
+- [x] DBスキーマ作成（Alembic migration）
+- [x] Claude API連携（Azure AI Foundry経由）
   - テキストベースAIフリートーク（Casual Chat モードのみ）
   - Claude Haiku でフィードバック生成（非同期）
-- [ ] 会話セッションCRUD (開始/メッセージ/終了/履歴)
-- [ ] 瞬間英作文（テキスト入力版、レベル1-3）
-- [ ] 忘却曲線ベース復習システム（SM-2アルゴリズム）
-- [ ] 簡易ダッシュボード（学習履歴リスト + ストリーク表示）
-- [ ] APIコスト追跡 + 使用量制限ミドルウェア
-- [ ] 料金プラン（Free / Standard 区分のみ、決済は後）
-- [ ] E2Eテスト（認証 → 会話 → 復習 の基本フロー）
+- [x] 会話セッションCRUD (開始/メッセージ/終了/履歴)
+- [x] 瞬間英作文（テキスト入力版、レベル1-3）
+- [x] 忘却曲線ベース復習システム（SM-2アルゴリズム）
+- [x] 簡易ダッシュボード（学習履歴リスト + ストリーク表示）
+- [x] APIコスト追跡 + 使用量制限ミドルウェア
+- [x] 料金プラン（Free / Standard 区分のみ、決済は後）
+- [x] E2Eテスト（認証 → 会話 → 復習 の基本フロー）
 
 ### Phase 2: 音声統合（6週間）
-- [ ] GPT Realtime API統合（WebRTC接続）
-- [ ] Azure Speech Services 発音評価統合
-- [ ] 音声付きAIフリートーク
-- [ ] シャドーイング機能（速度調整付きTTS再生）
-- [ ] 会話モード追加: Meeting Facilitation, Debate
-- [ ] パターンプラクティス機能
-- [ ] Staging環境構築 + デプロイパイプライン
+- [x] GPT Realtime API統合（WebRTC接続）
+- [x] Azure Speech Services 発音評価統合
+- [x] 音声付きAIフリートーク
+- [x] シャドーイング機能（速度調整付きTTS再生）
+- [x] 会話モード追加: Meeting Facilitation, Debate
+- [x] パターンプラクティス機能
+- [x] Staging環境構築 + デプロイパイプライン
 
 ### Phase 3: 学習最適化 + エンタープライズ（6週間）
-- [ ] もごもごイングリッシュ
-- [ ] アナリティクスダッシュボード（Recharts）
-- [ ] AIカリキュラム自動最適化
-- [ ] 週次/月次レポート
-- [ ] Production環境構築（HA, Private Endpoints）
-- [ ] Azure Front Door + API Management 設定
-- [ ] 本番デプロイパイプライン（Blue-Green + 承認ゲート）
-- [ ] 決済統合（Stripe）
+- [x] もごもごイングリッシュ
+- [x] アナリティクスダッシュボード（Recharts）
+- [x] AIカリキュラム自動最適化
+- [x] 週次/月次レポート
+- [x] Production環境構築（HA, Private Endpoints）
+- [x] Azure Front Door + API Management 設定
+- [x] 本番デプロイパイプライン（Blue-Green + 承認ゲート）
+- [x] 決済統合（Stripe）
 
 ### Phase 4: 高度な機能（4週間）
-- [ ] 発音トレーニング（詳細音素分析）
-- [ ] リスニングコンプリヘンション
-- [ ] 残りの会話モード実装
-- [ ] PWA対応（Service Worker, プッシュ通知）
-- [ ] Provisioned Throughput 最適化
-- [ ] 負荷テスト + パフォーマンスチューニング
+- [x] 発音トレーニング（詳細音素分析）
+- [x] リスニングコンプリヘンション
+- [x] 残りの会話モード実装
+- [x] PWA対応（Service Worker, プッシュ通知）
+- [x] Provisioned Throughput 最適化
+- [x] 負荷テスト + パフォーマンスチューニング
 
 **合計: 約24週間（6ヶ月）**
 
@@ -1863,8 +1863,9 @@ AZURE_OPENAI_TTS_DEPLOYMENT=gpt-4o-mini-tts
 # Claude (Azure AI Foundry Marketplace)
 AZURE_AI_FOUNDRY_ENDPOINT=https://<endpoint>.services.ai.azure.com/
 AZURE_AI_FOUNDRY_API_KEY=<Key Vault managed>
-CLAUDE_SONNET_MODEL=claude-sonnet-4-5
-CLAUDE_HAIKU_MODEL=claude-haiku-4-5
+CLAUDE_SONNET_MODEL=claude-sonnet-4-5-20250929
+CLAUDE_HAIKU_MODEL=claude-haiku-4-5-20251001
+CLAUDE_OPUS_MODEL=claude-opus-4-6
 
 # Azure Speech Services
 AZURE_SPEECH_KEY=<Key Vault managed>

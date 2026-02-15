@@ -28,6 +28,7 @@ except ImportError:
 
 # Vertex AIモデルマッピング
 MODEL_MAP = {
+    "opus": settings.gcp_vertex_model_opus,
     "sonnet": settings.gcp_vertex_model_sonnet,
     "haiku": settings.gcp_vertex_model_haiku,
 }

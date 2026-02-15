@@ -23,23 +23,21 @@ class TestInitMonitoring:
     def test_initializes_when_configured(self):
         """Connection String設定時にAzure Monitorが初期化される"""
         mock_configure = MagicMock()
-        mock_module = MagicMock()
-        mock_module.configure_azure_monitor = mock_configure
+        mock_azure_module = MagicMock()
+        mock_azure_module.configure_azure_monitor = mock_configure
 
         with patch("app.monitoring.settings") as mock_settings:
             mock_settings.appinsights_connection_string = "InstrumentationKey=test-key"
             mock_settings.environment = "dev"
 
-            # configure_azure_monitor は init_monitoring 内でインポートされる
+            # init_monitoring() 内の from azure.monitor.opentelemetry import ... をモック
             with patch.dict(
-                "sys.modules", {"azure.monitor.opentelemetry": mock_module}
+                "sys.modules",
+                {"azure.monitor.opentelemetry": mock_azure_module},
             ):
-                from importlib import reload
+                from app.monitoring import init_monitoring
 
-                import app.monitoring
-
-                reload(app.monitoring)
-                app.monitoring.init_monitoring()
+                init_monitoring()
                 mock_configure.assert_called_once()
 
 

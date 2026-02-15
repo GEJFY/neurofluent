@@ -114,6 +114,6 @@ class TestSpeakingRouter:
 
     @pytest.mark.asyncio
     async def test_unauthenticated(self, client):
-        """未認証ユーザーは401エラー"""
+        """未認証ユーザーは401/403エラー（HTTPBearer）"""
         response = await client.get("/api/speaking/flash")
-        assert response.status_code == 401
+        assert response.status_code in (401, 403)

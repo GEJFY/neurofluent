@@ -1,14 +1,29 @@
 """アプリケーション設定のテスト"""
 
+import os
+from unittest.mock import patch
+
 from app.config import Settings
+
+# CI環境で設定される環境変数を除外するためのキーリスト
+_CI_ENV_KEYS = [
+    "ENVIRONMENT",
+    "JWT_SECRET_KEY",
+    "LLM_PROVIDER",
+    "DATABASE_URL",
+    "DATABASE_URL_SYNC",
+    "REDIS_URL",
+]
 
 
 class TestSettings:
-    """Settings設定クラスのテスト（_env_file=Noneで.envを読まずにテスト）"""
+    """Settings設定クラスのテスト（.envと環境変数を無効化してテスト）"""
 
     def _make(self, **kwargs):
-        """テスト用のSettingsインスタンスを作成（.envを読まない）"""
-        return Settings(_env_file=None, **kwargs)
+        """テスト用のSettingsインスタンスを作成（.envと既知のCI環境変数を無効化）"""
+        cleaned = {k: v for k, v in os.environ.items() if k not in _CI_ENV_KEYS}
+        with patch.dict(os.environ, cleaned, clear=True):
+            return Settings(_env_file=None, **kwargs)
 
     def test_default_values(self):
         """デフォルト値が正しく設定される"""

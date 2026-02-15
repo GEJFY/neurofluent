@@ -1,6 +1,6 @@
 """Realtime(リアルタイム音声)ルーターのテスト"""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -12,13 +12,17 @@ class TestRealtimeRouter:
     async def test_create_session(self, auth_client):
         """認証済みユーザーでリアルタイムセッションを作成できる"""
         with patch("app.routers.realtime.realtime_service") as mock_service:
-            mock_service.create_session = AsyncMock(
+            # create_session は同期メソッド（awaitなし）
+            mock_service.create_session = MagicMock(
                 return_value={
                     "ws_url": "wss://test.openai.azure.com/realtime",
-                    "session_token": "test-token",
-                    "model": "gpt-realtime",
+                    "session_token": "test-token-abc123",
+                    "model": "gpt-4o-realtime",
                     "voice": "alloy",
-                    "instructions_summary": "Casual conversation",
+                    "mode": "casual_chat",
+                    "instructions_summary": "Casual Chat: 自由に英会話を楽しもう",
+                    "instructions": "You are a conversation partner...",
+                    "api_key": "test-key",
                 }
             )
 
@@ -32,16 +36,41 @@ class TestRealtimeRouter:
             assert "ws_url" in data
             assert "session_token" in data
             assert data["voice"] == "alloy"
+            assert data["mode"] == "casual_chat"
 
     @pytest.mark.asyncio
     async def test_get_modes(self, auth_client):
         """利用可能なモード一覧を取得できる"""
-        response = await auth_client.get("/api/talk/realtime/modes")
+        with patch("app.routers.realtime.realtime_service") as mock_service:
+            # get_available_modes は同期メソッド（awaitなし）
+            mock_service.get_available_modes = MagicMock(
+                return_value=[
+                    {
+                        "id": "casual_chat",
+                        "name": "Casual Chat",
+                        "description": "自由な英会話",
+                        "available": True,
+                        "phase": "phase1",
+                    },
+                    {
+                        "id": "meeting",
+                        "name": "Business Meeting",
+                        "description": "ビジネス会議シミュレーション",
+                        "available": True,
+                        "phase": "phase2",
+                    },
+                ]
+            )
 
-        assert response.status_code == 200
-        data = response.json()
-        assert isinstance(data, list)
-        assert len(data) > 0
+            response = await auth_client.get("/api/talk/realtime/modes")
+
+            assert response.status_code == 200
+            data = response.json()
+            # レスポンスは ConversationModeList: {"modes": [...], "current_phase": "..."}
+            assert "modes" in data
+            assert isinstance(data["modes"], list)
+            assert len(data["modes"]) > 0
+            assert data["modes"][0]["id"] == "casual_chat"
 
     @pytest.mark.asyncio
     async def test_unauthenticated(self, client):
@@ -55,22 +84,11 @@ class TestRealtimeRouter:
 
     @pytest.mark.asyncio
     async def test_invalid_mode(self, auth_client):
-        """無効なモードでエラーになる"""
-        with patch("app.routers.realtime.realtime_service") as mock_service:
-            mock_service.create_session = AsyncMock(
-                return_value={
-                    "ws_url": "wss://test.openai.azure.com/realtime",
-                    "session_token": "test-token",
-                    "model": "gpt-realtime",
-                    "voice": "alloy",
-                    "instructions_summary": "Test",
-                }
-            )
+        """無効なモードで400エラーになる"""
+        response = await auth_client.post(
+            "/api/talk/realtime/session",
+            json={"mode": "invalid_mode_xyz"},
+        )
 
-            response = await auth_client.post(
-                "/api/talk/realtime/session",
-                json={"mode": "invalid_mode_xyz"},
-            )
-
-            # invalid_mode may return 400 or 422
-            assert response.status_code in (200, 400, 422)
+        # ルーターでバリデーション済み → 400
+        assert response.status_code == 400

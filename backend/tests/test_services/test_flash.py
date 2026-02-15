@@ -54,7 +54,10 @@ class TestFlashService:
             assert len(exercises) == 2
             assert exercises[0].exercise_id == "ex-001"
             assert exercises[0].japanese == "次回の会議の日程を確認させてください。"
-            assert exercises[0].english_target == "Let me confirm the schedule for our next meeting."
+            assert (
+                exercises[0].english_target
+                == "Let me confirm the schedule for our next meeting."
+            )
             assert exercises[0].key_pattern == "Let me + verb"
 
     @pytest.mark.asyncio

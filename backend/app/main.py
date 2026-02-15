@@ -9,13 +9,23 @@ from app.logging_config import setup_logging
 from app.middleware.error_handler import register_error_handlers
 from app.middleware.logging_middleware import RequestLoggingMiddleware
 from app.routers import (
-    auth, health, talk, speaking, review, analytics,
+    analytics,
+    analytics_router,
+    auth,
+    comprehension,
+    health,
     # Phase 2: 音声統合
-    listening, pattern, realtime,
+    listening,
     # Phase 3: 学習最適化
-    mogomogo, analytics_router, subscription,
+    mogomogo,
+    pattern,
     # Phase 4: 高度な機能
-    pronunciation, comprehension,
+    pronunciation,
+    realtime,
+    review,
+    speaking,
+    subscription,
+    talk,
 )
 
 
@@ -54,14 +64,28 @@ app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"]
 
 # Phase 2: 音声統合
 app.include_router(listening.router, prefix="/api/listening", tags=["listening"])
-app.include_router(pattern.router, prefix="/api/speaking/pattern", tags=["pattern-practice"])
-app.include_router(realtime.router, prefix="/api/talk/realtime", tags=["realtime-voice"])
+app.include_router(
+    pattern.router, prefix="/api/speaking/pattern", tags=["pattern-practice"]
+)
+app.include_router(
+    realtime.router, prefix="/api/talk/realtime", tags=["realtime-voice"]
+)
 
 # Phase 3: 学習最適化
 app.include_router(mogomogo.router, prefix="/api/listening/mogomogo", tags=["mogomogo"])
-app.include_router(analytics_router.router, prefix="/api/analytics/advanced", tags=["analytics-advanced"])
-app.include_router(subscription.router, prefix="/api/subscription", tags=["subscription"])
+app.include_router(
+    analytics_router.router,
+    prefix="/api/analytics/advanced",
+    tags=["analytics-advanced"],
+)
+app.include_router(
+    subscription.router, prefix="/api/subscription", tags=["subscription"]
+)
 
 # Phase 4: 高度な機能
-app.include_router(pronunciation.router, prefix="/api/speaking/pronunciation", tags=["pronunciation"])
-app.include_router(comprehension.router, prefix="/api/listening/comprehension", tags=["comprehension"])
+app.include_router(
+    pronunciation.router, prefix="/api/speaking/pronunciation", tags=["pronunciation"]
+)
+app.include_router(
+    comprehension.router, prefix="/api/listening/comprehension", tags=["comprehension"]
+)

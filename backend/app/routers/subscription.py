@@ -4,18 +4,18 @@ Stripe連携によるサブスクリプション決済のエンドポイント�
 プラン一覧、チェックアウト、Webhook処理、キャンセルを提供する。
 """
 
-from fastapi import APIRouter, Depends, Request, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.subscription import (
-    PlanInfo,
-    SubscriptionInfo,
+    CancelSubscriptionResponse,
     CheckoutSessionRequest,
     CheckoutSessionResponse,
-    CancelSubscriptionResponse,
+    PlanInfo,
+    SubscriptionInfo,
 )
 from app.services.stripe_service import stripe_service
 
@@ -81,7 +81,7 @@ async def create_checkout_session(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="決済サービスとの通信に失敗しました。しばらく後にお試しください。",
@@ -113,7 +113,7 @@ async def handle_stripe_webhook(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Webhook検証エラー: {str(e)}",
         )
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Webhookの処理中にエラーが発生しました。",

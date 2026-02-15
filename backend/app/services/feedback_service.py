@@ -1,11 +1,10 @@
 """フィードバック生成サービス - ユーザー発話に対するAIフィードバック"""
 
 import logging
-import json
 
+from app.prompts.feedback import build_feedback_prompt
 from app.schemas.talk import FeedbackData
 from app.services.claude_service import claude_service
-from app.prompts.feedback import build_feedback_prompt
 
 logger = logging.getLogger(__name__)
 

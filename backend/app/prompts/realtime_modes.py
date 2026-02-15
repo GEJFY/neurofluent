@@ -461,13 +461,15 @@ def get_all_modes_summary() -> list[dict]:
     """
     summaries = []
     for mode_id, mode in CONVERSATION_MODES.items():
-        summaries.append({
-            "id": mode["id"],
-            "name": mode["name"],
-            "description": mode["description"],
-            "available": True,
-            "phase": mode["available_since"],
-            "difficulty_range": mode["difficulty_range"],
-            "key_patterns": mode["key_patterns"],
-        })
+        summaries.append(
+            {
+                "id": mode["id"],
+                "name": mode["name"],
+                "description": mode["description"],
+                "available": True,
+                "phase": mode["available_since"],
+                "difficulty_range": mode["difficulty_range"],
+                "key_patterns": mode["key_patterns"],
+            }
+        )
     return summaries

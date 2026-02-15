@@ -92,8 +92,7 @@ class LLMService:
         if provider_class is None:
             available = ", ".join(PROVIDER_MAP.keys())
             raise ValueError(
-                f"不明なLLMプロバイダー: '{provider_name}'. "
-                f"利用可能: {available}"
+                f"不明なLLMプロバイダー: '{provider_name}'. 利用可能: {available}"
             )
 
         try:

@@ -1,10 +1,9 @@
 """復習(Review)ルーターのテスト - 間隔反復学習"""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
-import pytest_asyncio
 
 from app.models.review import ReviewItem
 
@@ -32,7 +31,7 @@ class TestReviewRouter:
                 "target": "Let's schedule a meeting.",
                 "user_answer": "Let's do a meeting.",
             },
-            next_review_at=datetime.now(timezone.utc),
+            next_review_at=datetime.now(UTC),
         )
         db_session.add(item)
         await db_session.commit()
@@ -53,7 +52,7 @@ class TestReviewRouter:
             user_id=test_user.id,
             item_type="vocabulary",
             content={"word": "quarterly", "meaning": "四半期の"},
-            next_review_at=datetime.now(timezone.utc),
+            next_review_at=datetime.now(UTC),
         )
         db_session.add(item)
         await db_session.commit()

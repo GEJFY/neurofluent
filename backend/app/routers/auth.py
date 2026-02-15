@@ -1,6 +1,6 @@
 """認証ルーター - ユーザー登録・ログイン・プロフィール取得"""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from jose import jwt
@@ -12,7 +12,7 @@ from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.auth import UserCreate, UserLogin, UserResponse, Token
+from app.schemas.auth import Token, UserCreate, UserLogin, UserResponse
 
 router = APIRouter()
 
@@ -32,13 +32,15 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def create_access_token(user_id: str) -> str:
     """JWTアクセストークンを生成"""
-    expire = datetime.now(timezone.utc) + timedelta(hours=settings.jwt_expiry_hours)
+    expire = datetime.now(UTC) + timedelta(hours=settings.jwt_expiry_hours)
     payload = {
         "sub": user_id,
         "exp": expire,
-        "iat": datetime.now(timezone.utc),
+        "iat": datetime.now(UTC),
     }
-    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    return jwt.encode(
+        payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+    )
 
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)

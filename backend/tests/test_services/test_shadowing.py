@@ -19,7 +19,11 @@ class TestShadowingService:
             "text": "Let's review the quarterly results. Our revenue grew by 15% year over year.",
             "key_phrases": ["quarterly results", "revenue grew", "year over year"],
             "vocabulary_notes": [
-                {"word": "quarterly", "meaning": "四半期の", "example": "We have quarterly meetings."}
+                {
+                    "word": "quarterly",
+                    "meaning": "四半期の",
+                    "example": "We have quarterly meetings.",
+                }
             ],
         }
 

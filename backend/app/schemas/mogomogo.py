@@ -30,10 +30,11 @@ class DictationResult(BaseModel):
     """ディクテーション結果"""
 
     accuracy: float = Field(ge=0.0, le=1.0, description="全体精度（0.0-1.0）")
-    missed_words: list[str] = Field(default_factory=list, description="聞き取れなかった単語リスト")
+    missed_words: list[str] = Field(
+        default_factory=list, description="聞き取れなかった単語リスト"
+    )
     identified_patterns: list[str] = Field(
-        default_factory=list,
-        description="識別された音声変化パターン"
+        default_factory=list, description="識別された音声変化パターン"
     )
     score: float = Field(ge=0.0, le=1.0, description="総合スコア")
     feedback: str = Field(description="フィードバックコメント")
@@ -69,7 +70,7 @@ class MogomogoProgressItem(BaseModel):
     practice_count: int = 0
     mastery_level: str = Field(
         default="beginner",
-        description="習熟レベル: beginner, developing, proficient, mastered"
+        description="習熟レベル: beginner, developing, proficient, mastered",
     )
 
 

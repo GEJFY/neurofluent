@@ -1,12 +1,11 @@
 """レジリエンス機能のテスト - サーキットブレーカー・リトライ・レートリミッター"""
 
-import asyncio
 import time
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
-from app.llm.resilience import CircuitBreaker, RetryPolicy, RateLimiter
+from app.llm.resilience import CircuitBreaker, RateLimiter, RetryPolicy
 
 
 # ============================================================

@@ -7,7 +7,8 @@
 import asyncio
 import logging
 import time
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -144,11 +145,12 @@ class RetryPolicy:
                 if attempt < self.max_retries:
                     # Exponential backoff with jitter
                     delay = min(
-                        self.base_delay * (2 ** attempt),
+                        self.base_delay * (2**attempt),
                         self.max_delay,
                     )
                     # 簡易ジッター: 待機時間の50-100%をランダムに
                     import random
+
                     jittered_delay = delay * (0.5 + random.random() * 0.5)
                     logger.warning(
                         "リトライ %d/%d: %.1f秒後に再試行 (エラー: %s)",
@@ -209,7 +211,4 @@ class RateLimiter:
                 self.tokens -= 1.0
 
     def __repr__(self) -> str:
-        return (
-            f"RateLimiter(rpm={self.requests_per_minute}, "
-            f"tokens={self.tokens:.1f})"
-        )
+        return f"RateLimiter(rpm={self.requests_per_minute}, tokens={self.tokens:.1f})"

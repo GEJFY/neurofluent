@@ -2,14 +2,13 @@
 
 import pytest
 from fastapi import FastAPI
-from fastapi.exceptions import RequestValidationError
 from httpx import ASGITransport, AsyncClient
 
 from app.exceptions import (
     AppError,
     AuthenticationError,
-    NotFoundError,
     LLMProviderError,
+    NotFoundError,
 )
 from app.middleware.error_handler import register_error_handlers
 

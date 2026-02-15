@@ -6,9 +6,7 @@ FluentEdge テスト共通設定
 
 import asyncio
 import uuid
-from collections.abc import AsyncGenerator
-from datetime import datetime, timedelta, timezone
-from typing import Generator
+from collections.abc import AsyncGenerator, Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -16,7 +14,6 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.config import settings
 from app.database import Base, get_db
 from app.main import app
 
@@ -24,7 +21,9 @@ from app.main import app
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
 
 test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-TestSessionLocal = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
+TestSessionLocal = async_sessionmaker(
+    test_engine, class_=AsyncSession, expire_on_commit=False
+)
 
 
 @pytest.fixture(scope="session")
@@ -149,7 +148,10 @@ def mock_stripe():
             )
         )
         mock.handle_webhook = AsyncMock(
-            return_value={"event_type": "checkout.session.completed", "status": "processed"}
+            return_value={
+                "event_type": "checkout.session.completed",
+                "status": "processed",
+            }
         )
         yield mock
 

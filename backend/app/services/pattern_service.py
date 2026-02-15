@@ -7,17 +7,17 @@ Claude Haikuを使用してユーザーのレベルと弱点に基づいた
 import logging
 import random
 
+from app.prompts.pattern_practice import (
+    BUSINESS_PATTERNS,
+    build_pattern_check_prompt,
+    build_pattern_generation_prompt,
+)
 from app.schemas.pattern import (
-    PatternExercise,
-    PatternCheckResult,
     PatternCategory,
+    PatternCheckResult,
+    PatternExercise,
 )
 from app.services.claude_service import claude_service
-from app.prompts.pattern_practice import (
-    build_pattern_generation_prompt,
-    build_pattern_check_prompt,
-    BUSINESS_PATTERNS,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -229,7 +229,9 @@ class PatternService:
         )
 
         # リスト形式のレスポンスを処理
-        exercises_data = result if isinstance(result, list) else result.get("exercises", [])
+        exercises_data = (
+            result if isinstance(result, list) else result.get("exercises", [])
+        )
 
         exercises = []
         for item in exercises_data:

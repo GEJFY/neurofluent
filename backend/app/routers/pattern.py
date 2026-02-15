@@ -5,21 +5,21 @@
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select, func, case
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.user import User
 from app.models.pattern import PatternMastery
+from app.models.user import User
 from app.schemas.pattern import (
-    PatternExercise,
+    PatternCategory,
     PatternCheckRequest,
     PatternCheckResult,
-    PatternCategory,
+    PatternExercise,
     PatternProgress,
 )
 from app.services.pattern_service import pattern_service
@@ -61,7 +61,14 @@ async def get_pattern_exercises(
     組み込みパターンまたはAI生成パターンを返す。
     """
     # カテゴリのバリデーション
-    valid_categories = ["meeting", "negotiation", "presentation", "email", "discussion", "general"]
+    valid_categories = [
+        "meeting",
+        "negotiation",
+        "presentation",
+        "email",
+        "discussion",
+        "general",
+    ]
     if category and category not in valid_categories:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -178,7 +185,14 @@ async def get_pattern_progress(
 
     # 練習していないカテゴリも空エントリとして追加
     existing_categories = {p.category for p in progress_list}
-    all_categories = ["meeting", "negotiation", "presentation", "email", "discussion", "general"]
+    all_categories = [
+        "meeting",
+        "negotiation",
+        "presentation",
+        "email",
+        "discussion",
+        "general",
+    ]
     for cat in all_categories:
         if cat not in existing_categories:
             progress_list.append(
@@ -235,7 +249,7 @@ async def _update_pattern_mastery(
     )
     mastery = result.scalar_one_or_none()
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     if mastery is None:
         # 新規レコードを作成
@@ -254,9 +268,7 @@ async def _update_pattern_mastery(
         mastery.practice_count += 1
         # 指数移動平均で正答率を更新
         alpha = 0.3  # 新しいスコアの重み
-        mastery.accuracy_rate = (
-            alpha * score + (1 - alpha) * mastery.accuracy_rate
-        )
+        mastery.accuracy_rate = alpha * score + (1 - alpha) * mastery.accuracy_rate
         mastery.last_practiced_at = now
 
         # スキルステージの遷移チェック

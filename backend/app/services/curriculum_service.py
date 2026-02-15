@@ -6,23 +6,22 @@
 """
 
 import logging
-import math
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.stats import DailyStat
 from app.models.review import ReviewItem
 from app.models.sound_pattern import SoundPatternMastery
+from app.models.stats import DailyStat
+from app.prompts.analytics import build_daily_menu_prompt
 from app.schemas.analytics import (
+    ActivityItem,
     DailyMenu,
     FocusArea,
-    ActivityItem,
 )
 from app.services.claude_service import claude_service
-from app.prompts.analytics import build_daily_menu_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +103,7 @@ class CurriculumService:
         Returns:
             DailyMenu: 日次学習メニュー
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         # JSTに変換（UTC+9）
         jst_hour = (now.hour + 9) % 24
 
@@ -124,12 +123,15 @@ class CurriculumService:
         pending_result = await db.execute(
             select(func.count(ReviewItem.id)).where(
                 ReviewItem.user_id == user_id,
-                (ReviewItem.next_review_at <= now) | (ReviewItem.next_review_at.is_(None)),
+                (ReviewItem.next_review_at <= now)
+                | (ReviewItem.next_review_at.is_(None)),
             )
         )
         pending_reviews = pending_result.scalar() or 0
 
-        system_prompt = build_daily_menu_prompt(time_of_day, user_stats, pending_reviews)
+        system_prompt = build_daily_menu_prompt(
+            time_of_day, user_stats, pending_reviews
+        )
 
         messages = [
             {
@@ -148,19 +150,23 @@ class CurriculumService:
 
             activities = []
             for act in result.get("recommended_activities", []):
-                activities.append(ActivityItem(
-                    activity_type=act.get("activity_type", "review"),
-                    title=act.get("title", ""),
-                    description=act.get("description", ""),
-                    estimated_minutes=max(1, int(act.get("estimated_minutes", 5))),
-                    priority=min(max(int(act.get("priority", 3)), 1), 5),
-                    params=act.get("params", {}),
-                ))
+                activities.append(
+                    ActivityItem(
+                        activity_type=act.get("activity_type", "review"),
+                        title=act.get("title", ""),
+                        description=act.get("description", ""),
+                        estimated_minutes=max(1, int(act.get("estimated_minutes", 5))),
+                        priority=min(max(int(act.get("priority", 3)), 1), 5),
+                        params=act.get("params", {}),
+                    )
+                )
 
             return DailyMenu(
                 time_of_day=result.get("time_of_day", time_of_day),
                 recommended_activities=activities,
-                focus_message=result.get("focus_message", "Let's continue improving your English!"),
+                focus_message=result.get(
+                    "focus_message", "Let's continue improving your English!"
+                ),
                 estimated_minutes=int(result.get("estimated_minutes", 15)),
             )
 
@@ -201,8 +207,7 @@ class CurriculumService:
 
         # 音声パターン習熟度を取得
         pattern_result = await db.execute(
-            select(SoundPatternMastery)
-            .where(SoundPatternMastery.user_id == user_id)
+            select(SoundPatternMastery).where(SoundPatternMastery.user_id == user_id)
         )
         pattern_masteries = pattern_result.scalars().all()
 
@@ -222,8 +227,12 @@ class CurriculumService:
             elif skill_key == "pronunciation":
                 for s in stats:
                     if s.pronunciation_avg_score is not None:
-                        alpha += s.pronunciation_avg_score * max(1, s.sessions_completed)
-                        beta_param += (1 - s.pronunciation_avg_score) * max(1, s.sessions_completed)
+                        alpha += s.pronunciation_avg_score * max(
+                            1, s.sessions_completed
+                        )
+                        beta_param += (1 - s.pronunciation_avg_score) * max(
+                            1, s.sessions_completed
+                        )
 
             elif skill_key == "connected_speech":
                 for pm in pattern_masteries:
@@ -244,7 +253,7 @@ class CurriculumService:
                         # 1日5語を目標とした相対スコア
                         score = min(s.new_expressions_learned / 5.0, 1.0)
                         alpha += score
-                        beta_param += (1 - score)
+                        beta_param += 1 - score
 
             elif skill_key == "fluency":
                 for s in stats:
@@ -255,7 +264,9 @@ class CurriculumService:
                         beta_param += (1 - normalized) * max(1, s.sessions_completed)
 
             # Beta分布のExpected value: E[X] = alpha / (alpha + beta)
-            current_level = alpha / (alpha + beta_param) if (alpha + beta_param) > 0 else 0.5
+            current_level = (
+                alpha / (alpha + beta_param) if (alpha + beta_param) > 0 else 0.5
+            )
             target = skill_def["target"]
 
             # ギャップに基づく優先度計算（ギャップが大きいほど優先度が高い）
@@ -271,13 +282,15 @@ class CurriculumService:
             else:
                 priority = 5
 
-            focus_areas.append(FocusArea(
-                skill=skill_def["name"],
-                current_level=round(current_level, 3),
-                target_level=target,
-                priority=priority,
-                suggested_exercises=skill_def["exercise_types"],
-            ))
+            focus_areas.append(
+                FocusArea(
+                    skill=skill_def["name"],
+                    current_level=round(current_level, 3),
+                    target_level=target,
+                    priority=priority,
+                    suggested_exercises=skill_def["exercise_types"],
+                )
+            )
 
         # 優先度順にソート（低い数値 = 高い優先度）
         focus_areas.sort(key=lambda fa: fa.priority)
@@ -345,9 +358,8 @@ class CurriculumService:
                 # 既存スコアとの加重平均
                 total_sessions = daily_stat.sessions_completed
                 daily_stat.grammar_accuracy = (
-                    (daily_stat.grammar_accuracy * (total_sessions - 1) + grammar)
-                    / total_sessions
-                )
+                    daily_stat.grammar_accuracy * (total_sessions - 1) + grammar
+                ) / total_sessions
             else:
                 daily_stat.grammar_accuracy = grammar
 
@@ -357,9 +369,9 @@ class CurriculumService:
             if daily_stat.pronunciation_avg_score is not None:
                 total_sessions = daily_stat.sessions_completed
                 daily_stat.pronunciation_avg_score = (
-                    (daily_stat.pronunciation_avg_score * (total_sessions - 1) + pron_score)
-                    / total_sessions
-                )
+                    daily_stat.pronunciation_avg_score * (total_sessions - 1)
+                    + pron_score
+                ) / total_sessions
             else:
                 daily_stat.pronunciation_avg_score = pron_score
 
@@ -400,8 +412,12 @@ class CurriculumService:
         return {
             "total_minutes_last_7_days": int(row[0]),
             "total_sessions_last_7_days": int(row[1]),
-            "avg_grammar_accuracy": round(float(row[2]), 2) if row[2] is not None else 0.0,
-            "avg_pronunciation_score": round(float(row[3]), 2) if row[3] is not None else 0.0,
+            "avg_grammar_accuracy": round(float(row[2]), 2)
+            if row[2] is not None
+            else 0.0,
+            "avg_pronunciation_score": round(float(row[3]), 2)
+            if row[3] is not None
+            else 0.0,
         }
 
     def _build_fallback_menu(
@@ -490,14 +506,17 @@ class CurriculumService:
 
         # 未復習アイテムが多い場合は復習を追加
         if pending_reviews > 5:
-            activities.insert(0, ActivityItem(
-                activity_type="review",
-                title="Spaced Repetition Review",
-                description=f"You have {pending_reviews} items waiting for review.",
-                estimated_minutes=5,
-                priority=1,
-                params={"pending_count": pending_reviews},
-            ))
+            activities.insert(
+                0,
+                ActivityItem(
+                    activity_type="review",
+                    title="Spaced Repetition Review",
+                    description=f"You have {pending_reviews} items waiting for review.",
+                    estimated_minutes=5,
+                    priority=1,
+                    params={"pending_count": pending_reviews},
+                ),
+            )
 
         return DailyMenu(
             time_of_day=time_of_day,

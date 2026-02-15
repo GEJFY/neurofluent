@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 # オプショナルインポート: boto3
 try:
     import boto3
+
     HAS_BOTO3 = True
 except ImportError:
     HAS_BOTO3 = False

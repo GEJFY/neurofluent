@@ -29,7 +29,9 @@ class OpenAICompatibleProvider(LLMProvider):
     def __init__(self):
         self.base_url = settings.local_llm_base_url.rstrip("/")
         self.api_key = settings.local_llm_api_key
-        self.timeout = httpx.Timeout(120.0, connect=10.0)  # ローカルモデルは生成に時間がかかる
+        self.timeout = httpx.Timeout(
+            120.0, connect=10.0
+        )  # ローカルモデルは生成に時間がかかる
 
         logger.info(
             "OpenAI互換プロバイダー初期化: base_url=%s",

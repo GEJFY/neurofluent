@@ -3,22 +3,26 @@
 シャドーイング教材の生成、音声評価、TTS変換を提供。
 """
 
-import uuid
-from datetime import datetime, timezone
-
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    UploadFile,
+    status,
+)
 from fastapi.responses import Response
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.user import User
 from app.models.conversation import ConversationSession
+from app.models.user import User
 from app.schemas.listening import (
     ShadowingMaterial,
-    ShadowingStartRequest,
-    ShadowingEvaluateRequest,
     ShadowingResult,
     TTSRequest,
 )
@@ -74,6 +78,7 @@ async def generate_shadowing_material(
     # トピック未指定時はランダムに選択
     if topic is None:
         import random
+
         topic = random.choice(valid_topics)
 
     material = await shadowing_service.generate_material(

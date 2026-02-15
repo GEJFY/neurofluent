@@ -17,10 +17,18 @@ class TestFeedbackService:
 
         mock_response = {
             "grammar_errors": [
-                {"original": "I goes", "corrected": "I go", "explanation": "Subject-verb agreement"}
+                {
+                    "original": "I goes",
+                    "corrected": "I go",
+                    "explanation": "Subject-verb agreement",
+                }
             ],
             "expression_upgrades": [
-                {"original": "I want to", "upgraded": "I would like to", "context": "more polite"}
+                {
+                    "original": "I want to",
+                    "upgraded": "I would like to",
+                    "context": "more polite",
+                }
             ],
             "pronunciation_notes": ["Watch the 'th' sound"],
             "positive_feedback": "Good use of vocabulary!",
@@ -54,7 +62,9 @@ class TestFeedbackService:
         service = FeedbackService()
 
         with patch("app.services.feedback_service.claude_service") as mock_claude:
-            mock_claude.chat_json = AsyncMock(side_effect=ValueError("JSON parse error"))
+            mock_claude.chat_json = AsyncMock(
+                side_effect=ValueError("JSON parse error")
+            )
 
             result = await service.generate_feedback(
                 user_text="Hello there",
@@ -74,7 +84,9 @@ class TestFeedbackService:
         service = FeedbackService()
 
         with patch("app.services.feedback_service.claude_service") as mock_claude:
-            mock_claude.chat_json = AsyncMock(side_effect=RuntimeError("Connection lost"))
+            mock_claude.chat_json = AsyncMock(
+                side_effect=RuntimeError("Connection lost")
+            )
 
             result = await service.generate_feedback(
                 user_text="Test input",

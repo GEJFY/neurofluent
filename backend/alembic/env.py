@@ -7,22 +7,22 @@ autogenerateによるマイグレーション自動生成を可能にする。
 import asyncio
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from alembic import context
 from app.config import settings
 from app.database import Base
 
 # 全モデルをインポート（Alembicがテーブル定義を検出するために必要）
 from app.models import (  # noqa: F401
-    User,
-    ConversationSession,
-    ConversationMessage,
-    ReviewItem,
-    DailyStat,
     ApiUsageLog,
+    ConversationMessage,
+    ConversationSession,
+    DailyStat,
+    ReviewItem,
+    User,
 )
 
 # Alembic Config オブジェクト

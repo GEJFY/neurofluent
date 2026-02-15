@@ -17,7 +17,11 @@ def build_recommendation_prompt(user_stats: dict, weak_areas: list[str]) -> str:
         システムプロンプト文字列
     """
     stats_text = "\n".join(f"- {k}: {v}" for k, v in user_stats.items())
-    weak_text = "\n".join(f"- {area}" for area in weak_areas) if weak_areas else "- No specific weak areas identified"
+    weak_text = (
+        "\n".join(f"- {area}" for area in weak_areas)
+        if weak_areas
+        else "- No specific weak areas identified"
+    )
 
     return f"""You are a learning advisor for FluentEdge AI, an English learning platform for Japanese business professionals.
 Analyze the user's learning data and generate personalized recommendations.

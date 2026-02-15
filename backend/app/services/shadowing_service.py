@@ -6,14 +6,13 @@ Azure TTSによる音声合成、Azure Speech SDKによる評価を統合。
 
 import logging
 
+from app.prompts.shadowing import build_shadowing_material_prompt
 from app.schemas.listening import (
     ShadowingMaterial,
     ShadowingResult,
-    PronunciationWordScore,
 )
 from app.services.claude_service import claude_service
 from app.services.speech_service import speech_service
-from app.prompts.shadowing import build_shadowing_material_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +117,11 @@ class ShadowingService:
         return ShadowingMaterial(
             text=fallback_texts.get(difficulty, fallback_texts["intermediate"]),
             suggested_speeds=self._get_suggested_speeds(difficulty),
-            key_phrases=["start the meeting", "quarterly performance", "significant progress"],
+            key_phrases=[
+                "start the meeting",
+                "quarterly performance",
+                "significant progress",
+            ],
             vocabulary_notes=[
                 {
                     "word": "quarterly",
@@ -250,24 +253,17 @@ class ShadowingService:
 
         # 単語レベルのエラーを特定
         error_words = [
-            ws for ws in pron_result.word_scores
-            if ws.error_type is not None
+            ws for ws in pron_result.word_scores if ws.error_type is not None
         ]
         if error_words:
             mispronounced = [
-                ws.word for ws in error_words
-                if ws.error_type == "Mispronunciation"
+                ws.word for ws in error_words if ws.error_type == "Mispronunciation"
             ]
             if mispronounced:
                 words_str = ", ".join(mispronounced[:5])
-                areas.append(
-                    f"以下の単語の発音を重点的に練習しましょう: {words_str}"
-                )
+                areas.append(f"以下の単語の発音を重点的に練習しましょう: {words_str}")
 
-            omitted = [
-                ws.word for ws in error_words
-                if ws.error_type == "Omission"
-            ]
+            omitted = [ws.word for ws in error_words if ws.error_type == "Omission"]
             if omitted:
                 words_str = ", ".join(omitted[:5])
                 areas.append(

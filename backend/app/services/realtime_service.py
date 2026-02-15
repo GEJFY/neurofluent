@@ -12,8 +12,8 @@ import uuid
 from app.config import settings
 from app.prompts.realtime_modes import (
     CONVERSATION_MODES,
-    get_system_prompt,
     get_all_modes_summary,
+    get_system_prompt,
 )
 
 logger = logging.getLogger(__name__)
@@ -130,7 +130,10 @@ class RealtimeService:
         """
         # モードのバリデーション
         if mode not in CONVERSATION_MODES:
-            logger.warning("未知のモード '%s' が指定されました。casual_chatにフォールバック。", mode)
+            logger.warning(
+                "未知のモード '%s' が指定されました。casual_chatにフォールバック。",
+                mode,
+            )
             mode = "casual_chat"
 
         mode_config = CONVERSATION_MODES[mode]
@@ -159,9 +162,7 @@ class RealtimeService:
         full_instructions = system_prompt + level_addendum
 
         # 概要テキスト（クライアント表示用）
-        instructions_summary = (
-            f"{mode_config['name']}: {mode_config['description']}"
-        )
+        instructions_summary = f"{mode_config['name']}: {mode_config['description']}"
 
         return {
             "ws_url": self._ws_base_url,
@@ -198,7 +199,9 @@ class RealtimeService:
             mode = "casual_chat"
 
         voice = MODE_VOICE_MAP.get(mode, "alloy")
-        turn_detection = MODE_TURN_DETECTION.get(mode, MODE_TURN_DETECTION["casual_chat"])
+        turn_detection = MODE_TURN_DETECTION.get(
+            mode, MODE_TURN_DETECTION["casual_chat"]
+        )
 
         # システムプロンプトにレベル情報を追加
         system_prompt = get_system_prompt(mode)

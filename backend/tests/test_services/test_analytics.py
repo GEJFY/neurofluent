@@ -1,12 +1,9 @@
 """アナリティクスサービスのテスト - 学習統計分析"""
 
-import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import pytest_asyncio
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.analytics_service import AnalyticsService
 

@@ -4,7 +4,6 @@ import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
-import pytest_asyncio
 
 
 class TestTalkRouter:

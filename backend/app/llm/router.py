@@ -6,7 +6,8 @@
 """
 
 import logging
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from app.llm.base import LLMProvider
 from app.llm.resilience import CircuitBreaker, RateLimiter, RetryPolicy

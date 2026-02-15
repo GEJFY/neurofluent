@@ -8,18 +8,18 @@ import logging
 import uuid
 from difflib import SequenceMatcher
 
+from app.prompts.mogomogo import (
+    SOUND_PATTERN_DATABASE,
+    build_dictation_check_prompt,
+    build_mogomogo_generation_prompt,
+)
 from app.schemas.mogomogo import (
-    MogomogoExercise,
     DictationResult,
-    SoundPatternInfo,
     IpaExample,
+    MogomogoExercise,
+    SoundPatternInfo,
 )
 from app.services.claude_service import claude_service
-from app.prompts.mogomogo import (
-    build_mogomogo_generation_prompt,
-    build_dictation_check_prompt,
-    SOUND_PATTERN_DATABASE,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +45,7 @@ class MogomogoService:
             MogomogoExerciseのリスト
         """
         # 有効なパターンのみフィルタリング
-        valid_patterns = [
-            pt for pt in pattern_types if pt in SOUND_PATTERN_DATABASE
-        ]
+        valid_patterns = [pt for pt in pattern_types if pt in SOUND_PATTERN_DATABASE]
         if not valid_patterns:
             valid_patterns = ["linking", "reduction"]
 
@@ -73,7 +71,9 @@ class MogomogoService:
                 system=system_prompt,
             )
 
-            exercises_data = result if isinstance(result, list) else result.get("exercises", [])
+            exercises_data = (
+                result if isinstance(result, list) else result.get("exercises", [])
+            )
 
             exercises = []
             for item in exercises_data:
@@ -156,7 +156,9 @@ class MogomogoService:
         """
         patterns = []
         for pattern_key, data in SOUND_PATTERN_DATABASE.items():
-            examples = [ex["text"] + " -> " + ex["modified"] for ex in data["examples"][:5]]
+            examples = [
+                ex["text"] + " -> " + ex["modified"] for ex in data["examples"][:5]
+            ]
             ipa_examples = [
                 IpaExample(
                     original=ex["ipa_original"],
@@ -204,7 +206,7 @@ class MogomogoService:
                         ipa_original=ex["ipa_original"],
                         ipa_modified=ex["ipa_modified"],
                         explanation=f"{db_entry['name_en']}: {db_entry['description']}",
-                        practice_sentence=f"Listen carefully: \"{ex['text']}\" naturally sounds like \"{ex['modified']}\".",
+                        practice_sentence=f'Listen carefully: "{ex["text"]}" naturally sounds like "{ex["modified"]}".',
                         difficulty=level,
                     )
                 )
@@ -240,7 +242,9 @@ class MogomogoService:
         elif accuracy >= 0.7:
             feedback = "Good effort! You caught most of the words. Pay attention to the connected speech patterns."
         elif accuracy >= 0.5:
-            feedback = "Keep practicing! Try to focus on how words connect in natural speech."
+            feedback = (
+                "Keep practicing! Try to focus on how words connect in natural speech."
+            )
         else:
             feedback = "This is challenging! Listen again and focus on the individual words within the connected speech."
 

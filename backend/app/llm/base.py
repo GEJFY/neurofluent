@@ -113,15 +113,15 @@ class LLMProvider(ABC):
 
         # Markdownコードフェンスの除去
         if text.startswith("```json"):
-            text = text[len("```json"):].strip()
+            text = text[len("```json") :].strip()
         if text.startswith("```"):
-            text = text[len("```"):].strip()
+            text = text[len("```") :].strip()
         if text.endswith("```"):
-            text = text[:-len("```")].strip()
+            text = text[: -len("```")].strip()
 
         # JSONブロックの抽出（テキスト中に埋め込まれている場合）
         if not text.startswith(("{", "[")):
-            json_match = re.search(r'(\{[\s\S]*\}|\[[\s\S]*\])', text)
+            json_match = re.search(r"(\{[\s\S]*\}|\[[\s\S]*\])", text)
             if json_match:
                 text = json_match.group(1)
 
@@ -143,9 +143,7 @@ class LLMProvider(ABC):
         """
         content_blocks = data.get("content", [])
         text_parts = [
-            block["text"]
-            for block in content_blocks
-            if block.get("type") == "text"
+            block["text"] for block in content_blocks if block.get("type") == "text"
         ]
         return "\n".join(text_parts)
 

@@ -1,18 +1,18 @@
 """アナリティクス(Analytics)ルーター - 学習統計ダッシュボード"""
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.user import User
 from app.models.conversation import ConversationSession
 from app.models.review import ReviewItem
 from app.models.stats import DailyStat
+from app.models.user import User
 
 router = APIRouter()
 
@@ -101,7 +101,7 @@ async def get_dashboard(
         total_sessions = session_count_result.scalar() or 0
 
     # 未復習アイテム数
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     pending_result = await db.execute(
         select(func.count(ReviewItem.id)).where(
             ReviewItem.user_id == current_user.id,
@@ -113,15 +113,17 @@ async def get_dashboard(
     # 直近7日間の日次統計を整形
     recent_stats = []
     for stat in all_stats[:7]:
-        recent_stats.append({
-            "date": stat.date.isoformat(),
-            "practice_minutes": stat.practice_minutes,
-            "sessions_completed": stat.sessions_completed,
-            "reviews_completed": stat.reviews_completed,
-            "new_expressions_learned": stat.new_expressions_learned,
-            "grammar_accuracy": stat.grammar_accuracy,
-            "pronunciation_avg_score": stat.pronunciation_avg_score,
-        })
+        recent_stats.append(
+            {
+                "date": stat.date.isoformat(),
+                "practice_minutes": stat.practice_minutes,
+                "sessions_completed": stat.sessions_completed,
+                "reviews_completed": stat.reviews_completed,
+                "new_expressions_learned": stat.new_expressions_learned,
+                "grammar_accuracy": stat.grammar_accuracy,
+                "pronunciation_avg_score": stat.pronunciation_avg_score,
+            }
+        )
 
     return DashboardResponse(
         streak_days=streak_days,

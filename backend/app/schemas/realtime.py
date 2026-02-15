@@ -23,11 +23,10 @@ class RealtimeStartRequest(BaseModel):
 
     mode: str = Field(
         default="casual_chat",
-        description="会話モード: casual_chat, meeting, debate, presentation_qa, negotiation, small_talk"
+        description="会話モード: casual_chat, meeting, debate, presentation_qa, negotiation, small_talk",
     )
     scenario_description: str | None = Field(
-        default=None,
-        description="シナリオの詳細説明（カスタムシナリオ用）"
+        default=None, description="シナリオの詳細説明（カスタムシナリオ用）"
     )
 
 
@@ -47,12 +46,8 @@ class ConversationModeList(BaseModel):
     """利用可能な会話モード一覧レスポンス"""
 
     modes: list[ConversationMode] = Field(
-        default_factory=list,
-        description="利用可能な会話モードのリスト"
+        default_factory=list, description="利用可能な会話モードのリスト"
     )
-    current_phase: str = Field(
-        default="phase2",
-        description="現在の実装フェーズ"
-    )
+    current_phase: str = Field(default="phase2", description="現在の実装フェーズ")
 
     model_config = {"from_attributes": True}

@@ -7,7 +7,6 @@ Azure Cognitive Services Speech SDK REST APIを使用して
 import base64
 import json
 import logging
-import uuid
 from typing import Any
 
 import httpx
@@ -130,7 +129,9 @@ class SpeechService:
             logger.error("発音評価で予期しないエラー: %s", e)
             raise
 
-    def _parse_pronunciation_result(self, result: dict[str, Any]) -> PronunciationResult:
+    def _parse_pronunciation_result(
+        self, result: dict[str, Any]
+    ) -> PronunciationResult:
         """Azure Speech APIのレスポンスをPronunciationResultに変換"""
         nbe = result.get("NBest", [])
         if not nbe:

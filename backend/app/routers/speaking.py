@@ -1,16 +1,15 @@
 """瞬間英作文(Speaking/Flash)ルーター - フラッシュ翻訳エクササイズ"""
 
-import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.user import User
 from app.models.review import ReviewItem
-from app.schemas.speaking import FlashExercise, FlashCheckRequest, FlashCheckResponse
+from app.models.user import User
+from app.schemas.speaking import FlashCheckRequest, FlashCheckResponse, FlashExercise
 from app.services.flash_service import flash_service
 
 router = APIRouter()
@@ -21,7 +20,9 @@ async def generate_flash_exercises(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     count: int = Query(default=5, ge=1, le=20),
-    focus: str | None = Query(default=None, description="フォーカスする文法・表現カテゴリ"),
+    focus: str | None = Query(
+        default=None, description="フォーカスする文法・表現カテゴリ"
+    ),
 ):
     """
     ユーザーのレベルと弱点に基づいてフラッシュ翻訳エクササイズを生成
@@ -31,6 +32,7 @@ async def generate_flash_exercises(
     """
     # ユーザーの弱点パターンを取得（直近の統計から）
     from sqlalchemy import select
+
     from app.models.stats import DailyStat
 
     stats_result = await db.execute(
@@ -93,7 +95,7 @@ async def check_flash_answer(
                 "corrected": result.corrected,
                 "explanation": result.explanation,
             },
-            next_review_at=datetime.now(timezone.utc),
+            next_review_at=datetime.now(UTC),
         )
         db.add(review_item)
         await db.commit()

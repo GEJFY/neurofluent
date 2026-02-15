@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.schemas.speaking import FlashExercise, FlashCheckResponse
+from app.schemas.speaking import FlashCheckResponse, FlashExercise
 
 
 class TestSpeakingRouter:
@@ -83,7 +83,9 @@ class TestSpeakingRouter:
             assert data["score"] == 0.9
 
     @pytest.mark.asyncio
-    async def test_check_answer_low_score_creates_review(self, auth_client, mock_claude):
+    async def test_check_answer_low_score_creates_review(
+        self, auth_client, mock_claude
+    ):
         """低スコアの場合に復習アイテムが作成される"""
         mock_result = FlashCheckResponse(
             is_correct=False,

@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 try:
     import google.auth
     import google.auth.transport.requests
+
     HAS_GOOGLE_AUTH = True
 except ImportError:
     HAS_GOOGLE_AUTH = False

@@ -8,15 +8,17 @@ import pytest
 import respx
 
 from app.llm.base import LLMProvider
-from app.llm.providers.azure_foundry import AzureFoundryProvider
 from app.llm.providers.anthropic_direct import AnthropicDirectProvider
+from app.llm.providers.azure_foundry import AzureFoundryProvider
 from app.llm.providers.openai_compat import OpenAICompatibleProvider
 
 
 # ============================================================
 # ヘルパー: Anthropic形式のモックレスポンス
 # ============================================================
-def _anthropic_response(text: str, input_tokens: int = 50, output_tokens: int = 20) -> dict:
+def _anthropic_response(
+    text: str, input_tokens: int = 50, output_tokens: int = 20
+) -> dict:
     """Anthropic Messages API形式の正常レスポンスを生成"""
     return {
         "id": "msg_test",
@@ -31,7 +33,9 @@ def _anthropic_response(text: str, input_tokens: int = 50, output_tokens: int = 
     }
 
 
-def _openai_response(text: str, prompt_tokens: int = 50, completion_tokens: int = 20) -> dict:
+def _openai_response(
+    text: str, prompt_tokens: int = 50, completion_tokens: int = 20
+) -> dict:
     """OpenAI Chat Completions形式の正常レスポンスを生成"""
     return {
         "id": "chatcmpl-test",
@@ -70,7 +74,9 @@ class TestAzureFoundryProvider:
             provider = AzureFoundryProvider()
 
             respx.post("https://test.azure.com/anthropic/v1/messages").mock(
-                return_value=httpx.Response(200, json=_anthropic_response("Hello, world!"))
+                return_value=httpx.Response(
+                    200, json=_anthropic_response("Hello, world!")
+                )
             )
 
             result = await provider.chat(
@@ -118,7 +124,9 @@ class TestAzureFoundryProvider:
             respx.post("https://test.azure.com/anthropic/v1/messages").mock(
                 return_value=httpx.Response(
                     200,
-                    json=_anthropic_response("Response text", input_tokens=100, output_tokens=50),
+                    json=_anthropic_response(
+                        "Response text", input_tokens=100, output_tokens=50
+                    ),
                 )
             )
 
@@ -171,7 +179,9 @@ class TestAnthropicDirectProvider:
             provider = AnthropicDirectProvider()
 
             respx.post("https://api.anthropic.com/v1/messages").mock(
-                return_value=httpx.Response(200, json=_anthropic_response("Direct response"))
+                return_value=httpx.Response(
+                    200, json=_anthropic_response("Direct response")
+                )
             )
 
             result = await provider.chat(
@@ -195,7 +205,9 @@ class TestAnthropicDirectProvider:
             respx.post("https://api.anthropic.com/v1/messages").mock(
                 return_value=httpx.Response(
                     200,
-                    json=_anthropic_response("usage test", input_tokens=200, output_tokens=100),
+                    json=_anthropic_response(
+                        "usage test", input_tokens=200, output_tokens=100
+                    ),
                 )
             )
 
@@ -227,7 +239,9 @@ class TestOpenAICompatProvider:
             provider = OpenAICompatibleProvider()
 
             respx.post("http://localhost:11434/v1/chat/completions").mock(
-                return_value=httpx.Response(200, json=_openai_response("OpenAI response"))
+                return_value=httpx.Response(
+                    200, json=_openai_response("OpenAI response")
+                )
             )
 
             result = await provider.chat(
@@ -261,7 +275,9 @@ class TestOpenAICompatProvider:
             # リクエストボディを検証: systemメッセージが先頭にある
             request_body = json.loads(route.calls[0].request.content)
             assert request_body["messages"][0]["role"] == "system"
-            assert request_body["messages"][0]["content"] == "You are a helpful assistant."
+            assert (
+                request_body["messages"][0]["content"] == "You are a helpful assistant."
+            )
 
     @pytest.mark.asyncio
     @respx.mock
@@ -278,7 +294,9 @@ class TestOpenAICompatProvider:
             respx.post("http://localhost:11434/v1/chat/completions").mock(
                 return_value=httpx.Response(
                     200,
-                    json=_openai_response("test", prompt_tokens=150, completion_tokens=75),
+                    json=_openai_response(
+                        "test", prompt_tokens=150, completion_tokens=75
+                    ),
                 )
             )
 

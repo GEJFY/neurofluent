@@ -115,7 +115,9 @@ def build_shadowing_material_prompt(
         システムプロンプト文字列
     """
     topic_config = SHADOWING_TOPICS.get(topic, SHADOWING_TOPICS["business_meeting"])
-    diff_config = DIFFICULTY_GUIDANCE.get(difficulty, DIFFICULTY_GUIDANCE["intermediate"])
+    diff_config = DIFFICULTY_GUIDANCE.get(
+        difficulty, DIFFICULTY_GUIDANCE["intermediate"]
+    )
 
     themes_list = "\n".join(f"  - {theme}" for theme in topic_config["example_themes"])
 
@@ -123,19 +125,19 @@ def build_shadowing_material_prompt(
 
 ## Task
 Generate a short passage suitable for shadowing practice. The passage should sound like
-natural spoken English from {topic_config['context']}.
+natural spoken English from {topic_config["context"]}.
 
 ## Context
-- Speaker type: {topic_config['typical_speakers']}
-- Tone: {topic_config['tone']}
+- Speaker type: {topic_config["typical_speakers"]}
+- Tone: {topic_config["tone"]}
 - User's CEFR level: {user_level}
 
-## Difficulty: {difficulty} (CEFR {diff_config['cefr_range']})
-- Sentence count: {diff_config['sentence_count']} sentences
-- Target word count: {diff_config['word_count']} words
-- Vocabulary level: {diff_config['vocabulary']}
-- Speech characteristics: {diff_config['speech_rate']}
-- Grammar patterns: {diff_config['patterns']}
+## Difficulty: {difficulty} (CEFR {diff_config["cefr_range"]})
+- Sentence count: {diff_config["sentence_count"]} sentences
+- Target word count: {diff_config["word_count"]} words
+- Vocabulary level: {diff_config["vocabulary"]}
+- Speech characteristics: {diff_config["speech_rate"]}
+- Grammar patterns: {diff_config["patterns"]}
 
 ## Example Themes for This Topic
 {themes_list}

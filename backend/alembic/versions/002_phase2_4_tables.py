@@ -7,9 +7,10 @@ Create Date: 2026-02-14
 追加テーブル: pattern_mastery, sound_pattern_mastery, subscriptions
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 # revision identifiers
 revision = "002_phase2_4"
@@ -114,12 +115,8 @@ def upgrade() -> None:
             unique=True,
             index=True,
         ),
-        sa.Column(
-            "stripe_customer_id", sa.String(255), nullable=True, unique=True
-        ),
-        sa.Column(
-            "stripe_subscription_id", sa.String(255), nullable=True, unique=True
-        ),
+        sa.Column("stripe_customer_id", sa.String(255), nullable=True, unique=True),
+        sa.Column("stripe_subscription_id", sa.String(255), nullable=True, unique=True),
         sa.Column(
             "plan",
             sa.String(50),

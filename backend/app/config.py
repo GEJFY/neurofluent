@@ -8,8 +8,12 @@ class Settings(BaseSettings):
     backend_cors_origins: str = "http://localhost:3000"
 
     # Database
-    database_url: str = "postgresql+asyncpg://fluentedge:fluentedge@localhost:5432/fluentedge"
-    database_url_sync: str = "postgresql://fluentedge:fluentedge@localhost:5432/fluentedge"
+    database_url: str = (
+        "postgresql+asyncpg://fluentedge:fluentedge@localhost:5432/fluentedge"
+    )
+    database_url_sync: str = (
+        "postgresql://fluentedge:fluentedge@localhost:5432/fluentedge"
+    )
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"

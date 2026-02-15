@@ -4,23 +4,23 @@
 音声変化パターンを聞き取る力を養成するエンドポイント群。
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.user import User
 from app.models.sound_pattern import SoundPatternMastery
+from app.models.user import User
 from app.schemas.mogomogo import (
-    MogomogoExercise,
     DictationRequest,
     DictationResult,
-    SoundPatternInfo,
+    MogomogoExercise,
     MogomogoProgress,
     MogomogoProgressItem,
+    SoundPatternInfo,
 )
 from app.services.mogomogo_service import mogomogo_service
 
@@ -48,7 +48,9 @@ async def generate_exercises(
         description="カンマ区切りのパターン種別 (linking,reduction,flapping,deletion,weak_form)",
     ),
     count: int = Query(default=10, ge=1, le=30, description="生成する問題数"),
-    difficulty: str = Query(default=None, description="難易度レベル (A2, B1, B2, C1, C2)"),
+    difficulty: str = Query(
+        default=None, description="難易度レベル (A2, B1, B2, C1, C2)"
+    ),
 ):
     """
     指定された音声変化パターンの練習問題を生成
@@ -161,7 +163,9 @@ async def get_progress(
     }
 
     for pt, entries in pattern_map.items():
-        avg_accuracy = sum(e.accuracy for e in entries) / len(entries) if entries else 0.0
+        avg_accuracy = (
+            sum(e.accuracy for e in entries) / len(entries) if entries else 0.0
+        )
         total_practice = sum(e.practice_count for e in entries)
 
         # 習熟レベル判定
@@ -174,13 +178,15 @@ async def get_progress(
         else:
             mastery_level = "beginner"
 
-        patterns.append(MogomogoProgressItem(
-            pattern_type=pt,
-            pattern_name=pattern_names.get(pt, pt.replace("_", " ").title()),
-            accuracy=round(avg_accuracy, 3),
-            practice_count=total_practice,
-            mastery_level=mastery_level,
-        ))
+        patterns.append(
+            MogomogoProgressItem(
+                pattern_type=pt,
+                pattern_name=pattern_names.get(pt, pt.replace("_", " ").title()),
+                accuracy=round(avg_accuracy, 3),
+                practice_count=total_practice,
+                mastery_level=mastery_level,
+            )
+        )
 
         total_accuracy += avg_accuracy
         total_count += total_practice
@@ -195,6 +201,7 @@ async def get_progress(
 
 
 # --- ヘルパー関数 ---
+
 
 def _detect_pattern_type(pattern_description: str) -> str | None:
     """パターン説明文からパターン種別を推定"""
@@ -230,7 +237,7 @@ async def _update_pattern_mastery(
     )
     mastery = result.scalar_one_or_none()
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     if mastery is None:
         mastery = SoundPatternMastery(

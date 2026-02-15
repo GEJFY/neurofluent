@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class ModelPricing:
     """モデルの料金情報（USD / 1Mトークン）"""
-    input_price_per_m: float   # 入力トークン 100万あたりの料金
+
+    input_price_per_m: float  # 入力トークン 100万あたりの料金
     output_price_per_m: float  # 出力トークン 100万あたりの料金
 
 
@@ -24,20 +25,16 @@ PRICING_TABLE: dict[tuple[str, str], ModelPricing] = {
     # Azure Marketplace経由の場合、Anthropic直接と同等料金
     ("azure_foundry", "sonnet"): ModelPricing(3.0, 15.0),
     ("azure_foundry", "haiku"): ModelPricing(0.80, 4.0),
-
     # === Anthropic Direct API ===
     ("anthropic", "sonnet"): ModelPricing(3.0, 15.0),
     ("anthropic", "haiku"): ModelPricing(0.80, 4.0),
-
     # === AWS Bedrock ===
     # Bedrock経由は若干プレミアムがある場合あり（同等として計算）
     ("bedrock", "sonnet"): ModelPricing(3.0, 15.0),
     ("bedrock", "haiku"): ModelPricing(0.80, 4.0),
-
     # === GCP Vertex AI ===
     ("vertex", "sonnet"): ModelPricing(3.0, 15.0),
     ("vertex", "haiku"): ModelPricing(0.80, 4.0),
-
     # === Local / OpenAI-compatible ===
     # ローカルモデルはコスト0（電気代は含まず）
     ("local", "sonnet"): ModelPricing(0.0, 0.0),

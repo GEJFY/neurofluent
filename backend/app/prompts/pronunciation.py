@@ -261,9 +261,7 @@ def build_pronunciation_exercise_prompt(
     for phoneme in target_phonemes:
         if phoneme in JAPANESE_L1_INTERFERENCE:
             data = JAPANESE_L1_INTERFERENCE[phoneme]
-            pairs_text = ", ".join(
-                f"{a}/{b}" for a, b in data["minimal_pairs"][:6]
-            )
+            pairs_text = ", ".join(f"{a}/{b}" for a, b in data["minimal_pairs"][:6])
             phoneme_sections.append(
                 f"### {phoneme}\n"
                 f"Problem: {data['description_en']}\n"
@@ -348,7 +346,7 @@ def build_prosody_exercise_prompt(pattern_type: str = "stress") -> str:
         "stress": {
             "focus": "Word and sentence stress patterns",
             "description": "Japanese is a pitch-accent language with relatively even stress. "
-                          "English uses stress to convey meaning and emphasis.",
+            "English uses stress to convey meaning and emphasis.",
             "examples": [
                 "REcord (noun) vs reCORD (verb)",
                 "PREsent (noun) vs preSENT (verb)",
@@ -359,7 +357,7 @@ def build_prosody_exercise_prompt(pattern_type: str = "stress") -> str:
         "rhythm": {
             "focus": "Stress-timed rhythm patterns",
             "description": "English is stress-timed: stressed syllables are roughly equally spaced, "
-                          "while unstressed syllables are compressed. Japanese is mora-timed.",
+            "while unstressed syllables are compressed. Japanese is mora-timed.",
             "examples": [
                 "CATS chase MICE (3 stressed, regular rhythm)",
                 "The CATS are CHASing the MICE (same rhythm despite more syllables)",
@@ -369,7 +367,7 @@ def build_prosody_exercise_prompt(pattern_type: str = "stress") -> str:
         "intonation": {
             "focus": "Sentence intonation patterns",
             "description": "English uses intonation to convey meaning, emotion, and intention. "
-                          "Rising intonation for questions, falling for statements, etc.",
+            "Rising intonation for questions, falling for statements, etc.",
             "examples": [
                 "You're coming? (rising - genuine question)",
                 "You're coming. (falling - statement)",
@@ -384,8 +382,8 @@ def build_prosody_exercise_prompt(pattern_type: str = "stress") -> str:
 
     return f"""You are a Prosody Exercise Generator for FluentEdge AI, helping Japanese speakers master English prosody.
 
-## Focus Area: {info['focus']}
-{info['description']}
+## Focus Area: {info["focus"]}
+{info["description"]}
 
 ## Examples
 {examples_text}

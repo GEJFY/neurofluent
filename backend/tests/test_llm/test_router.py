@@ -1,11 +1,11 @@
 """LLMルーターのテスト - フォールバック・プライマリ成功・全失敗"""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from app.llm.resilience import RateLimiter, RetryPolicy
 from app.llm.router import LLMRouter
-from app.llm.resilience import RetryPolicy, RateLimiter
 
 
 # ============================================================
@@ -24,7 +24,12 @@ def _make_provider(name: str, chat_return: str = "ok", should_fail: bool = False
         provider.chat = AsyncMock(return_value=chat_return)
         provider.chat_json = AsyncMock(return_value={"result": chat_return})
         provider.get_usage_info = AsyncMock(
-            return_value={"text": chat_return, "input_tokens": 10, "output_tokens": 5, "model": name}
+            return_value={
+                "text": chat_return,
+                "input_tokens": 10,
+                "output_tokens": 5,
+                "model": name,
+            }
         )
 
     return provider

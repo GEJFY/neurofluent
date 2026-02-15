@@ -1,15 +1,14 @@
 """モデルのテスト - User, DailyStat, ReviewItem作成"""
 
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import pytest
-import pytest_asyncio
 
-from app.models.user import User
-from app.models.stats import DailyStat
+from app.models.conversation import ConversationMessage, ConversationSession
 from app.models.review import ReviewItem
-from app.models.conversation import ConversationSession, ConversationMessage
+from app.models.stats import DailyStat
+from app.models.user import User
 
 
 class TestUserModel:
@@ -148,7 +147,7 @@ class TestReviewItemModel:
                 "target": "Let's discuss the agenda.",
                 "user_answer": "Let's talk about agenda.",
             },
-            next_review_at=datetime.now(timezone.utc),
+            next_review_at=datetime.now(UTC),
         )
         db_session.add(item)
         await db_session.commit()

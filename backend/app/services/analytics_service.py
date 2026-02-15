@@ -5,41 +5,40 @@
 """
 
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.stats import DailyStat
 from app.models.review import ReviewItem
-from app.models.conversation import ConversationSession
 from app.models.sound_pattern import SoundPatternMastery
+from app.models.stats import DailyStat
+from app.prompts.analytics import build_recommendation_prompt
 from app.schemas.analytics import (
-    WeeklyReport,
+    Achievement,
+    DailyBreakdown,
+    ListeningComprehensionBySpeed,
+    ListeningDictationAccuracy,
+    ListeningSkill,
+    ListeningWeakPatterns,
     MonthlyReport,
-    SkillBreakdown,
+    PhonemeTrend,
     PronunciationProgress,
     Recommendation,
-    DailyBreakdown,
-    Achievement,
-    PhonemeTrend,
-    SpeakingSkill,
-    SpeakingResponseTime,
+    SkillBreakdown,
+    SpeakingExpressionLevel,
     SpeakingFillerWords,
     SpeakingGrammar,
-    SpeakingExpressionLevel,
-    ListeningSkill,
-    ListeningComprehensionBySpeed,
-    ListeningWeakPatterns,
-    ListeningDictationAccuracy,
-    VocabularySkill,
-    VocabularyRange,
-    VocabularySophistication,
+    SpeakingResponseTime,
+    SpeakingSkill,
     VocabularyNewPerWeek,
+    VocabularyRange,
+    VocabularySkill,
+    VocabularySophistication,
+    WeeklyReport,
 )
 from app.services.claude_service import claude_service
-from app.prompts.analytics import build_recommendation_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +72,9 @@ class AnalyticsService:
         # 前週の統計を取得（比較用）
         prev_week_start = week_start - timedelta(days=7)
         prev_week_end = week_start - timedelta(days=1)
-        prev_stats = await self._get_daily_stats(user_id, prev_week_start, prev_week_end, db)
+        prev_stats = await self._get_daily_stats(
+            user_id, prev_week_start, prev_week_end, db
+        )
 
         # 今週の集計
         total_minutes = sum(s.practice_minutes for s in current_stats)
@@ -81,10 +82,18 @@ class AnalyticsService:
         total_reviews = sum(s.reviews_completed for s in current_stats)
         new_expressions = sum(s.new_expressions_learned for s in current_stats)
 
-        grammar_scores = [s.grammar_accuracy for s in current_stats if s.grammar_accuracy is not None]
-        avg_grammar = sum(grammar_scores) / len(grammar_scores) if grammar_scores else None
+        grammar_scores = [
+            s.grammar_accuracy for s in current_stats if s.grammar_accuracy is not None
+        ]
+        avg_grammar = (
+            sum(grammar_scores) / len(grammar_scores) if grammar_scores else None
+        )
 
-        pron_scores = [s.pronunciation_avg_score for s in current_stats if s.pronunciation_avg_score is not None]
+        pron_scores = [
+            s.pronunciation_avg_score
+            for s in current_stats
+            if s.pronunciation_avg_score is not None
+        ]
         avg_pronunciation = sum(pron_scores) / len(pron_scores) if pron_scores else None
 
         # ストリーク計算
@@ -106,15 +115,23 @@ class AnalyticsService:
 
         # 前週比較
         prev_minutes = sum(s.practice_minutes for s in prev_stats)
-        prev_grammar = [s.grammar_accuracy for s in prev_stats if s.grammar_accuracy is not None]
-        prev_avg_grammar = sum(prev_grammar) / len(prev_grammar) if prev_grammar else None
+        prev_grammar = [
+            s.grammar_accuracy for s in prev_stats if s.grammar_accuracy is not None
+        ]
+        prev_avg_grammar = (
+            sum(prev_grammar) / len(prev_grammar) if prev_grammar else None
+        )
 
         improvement = {}
         if prev_minutes > 0:
             improvement["minutes"] = round(
                 ((total_minutes - prev_minutes) / prev_minutes) * 100, 1
             )
-        if prev_avg_grammar is not None and avg_grammar is not None and prev_avg_grammar > 0:
+        if (
+            prev_avg_grammar is not None
+            and avg_grammar is not None
+            and prev_avg_grammar > 0
+        ):
             improvement["grammar_accuracy"] = round(
                 ((avg_grammar - prev_avg_grammar) / prev_avg_grammar) * 100, 1
             )
@@ -126,8 +143,12 @@ class AnalyticsService:
             total_sessions=total_sessions,
             total_reviews=total_reviews,
             new_expressions=new_expressions,
-            avg_grammar_accuracy=round(avg_grammar, 3) if avg_grammar is not None else None,
-            avg_pronunciation=round(avg_pronunciation, 3) if avg_pronunciation is not None else None,
+            avg_grammar_accuracy=round(avg_grammar, 3)
+            if avg_grammar is not None
+            else None,
+            avg_pronunciation=round(avg_pronunciation, 3)
+            if avg_pronunciation is not None
+            else None,
             streak_days=streak_days,
             daily_breakdown=daily_breakdown,
             improvement_vs_last_week=improvement,
@@ -154,7 +175,9 @@ class AnalyticsService:
         if month_start.month == 12:
             month_end = date(month_start.year + 1, 1, 1) - timedelta(days=1)
         else:
-            month_end = date(month_start.year, month_start.month + 1, 1) - timedelta(days=1)
+            month_end = date(month_start.year, month_start.month + 1, 1) - timedelta(
+                days=1
+            )
 
         stats = await self._get_daily_stats(user_id, month_start, month_end, db)
 
@@ -163,10 +186,18 @@ class AnalyticsService:
         total_reviews = sum(s.reviews_completed for s in stats)
         new_expressions = sum(s.new_expressions_learned for s in stats)
 
-        grammar_scores = [s.grammar_accuracy for s in stats if s.grammar_accuracy is not None]
-        avg_grammar = sum(grammar_scores) / len(grammar_scores) if grammar_scores else None
+        grammar_scores = [
+            s.grammar_accuracy for s in stats if s.grammar_accuracy is not None
+        ]
+        avg_grammar = (
+            sum(grammar_scores) / len(grammar_scores) if grammar_scores else None
+        )
 
-        pron_scores = [s.pronunciation_avg_score for s in stats if s.pronunciation_avg_score is not None]
+        pron_scores = [
+            s.pronunciation_avg_score
+            for s in stats
+            if s.pronunciation_avg_score is not None
+        ]
         avg_pronunciation = sum(pron_scores) / len(pron_scores) if pron_scores else None
 
         # 月内最長ストリーク
@@ -187,9 +218,13 @@ class AnalyticsService:
         # 推奨事項
         recommendations_text = []
         if weaknesses:
-            recommendations_text.append(f"Focus on improving: {', '.join(weaknesses[:2])}")
+            recommendations_text.append(
+                f"Focus on improving: {', '.join(weaknesses[:2])}"
+            )
         if total_minutes < 300:
-            recommendations_text.append("Try to increase daily practice time to reach 10 minutes/day")
+            recommendations_text.append(
+                "Try to increase daily practice time to reach 10 minutes/day"
+            )
         if avg_grammar is not None and avg_grammar < 0.7:
             recommendations_text.append("Consider more grammar-focused exercises")
 
@@ -200,8 +235,12 @@ class AnalyticsService:
             total_sessions=total_sessions,
             total_reviews=total_reviews,
             new_expressions=new_expressions,
-            avg_grammar_accuracy=round(avg_grammar, 3) if avg_grammar is not None else None,
-            avg_pronunciation=round(avg_pronunciation, 3) if avg_pronunciation is not None else None,
+            avg_grammar_accuracy=round(avg_grammar, 3)
+            if avg_grammar is not None
+            else None,
+            avg_pronunciation=round(avg_pronunciation, 3)
+            if avg_pronunciation is not None
+            else None,
             streak_best=streak_best,
             monthly_trend_chart_data=weekly_trend,
             skill_radar_data=skill_radar,
@@ -232,11 +271,19 @@ class AnalyticsService:
         stats = await self._get_daily_stats(user_id, thirty_days_ago, today, db)
 
         # --- スピーキング ---
-        response_times = [s.avg_response_time_ms for s in stats if s.avg_response_time_ms is not None]
-        avg_response = int(sum(response_times) / len(response_times)) if response_times else 0
+        response_times = [
+            s.avg_response_time_ms for s in stats if s.avg_response_time_ms is not None
+        ]
+        avg_response = (
+            int(sum(response_times) / len(response_times)) if response_times else 0
+        )
 
-        grammar_scores = [s.grammar_accuracy for s in stats if s.grammar_accuracy is not None]
-        avg_grammar = sum(grammar_scores) / len(grammar_scores) if grammar_scores else 0.0
+        grammar_scores = [
+            s.grammar_accuracy for s in stats if s.grammar_accuracy is not None
+        ]
+        avg_grammar = (
+            sum(grammar_scores) / len(grammar_scores) if grammar_scores else 0.0
+        )
 
         # 応答速度のトレンド判定
         response_trend = "stable"
@@ -283,8 +330,7 @@ class AnalyticsService:
         # --- リスニング ---
         # 音声パターン習熟度を取得
         pattern_result = await db.execute(
-            select(SoundPatternMastery)
-            .where(SoundPatternMastery.user_id == user_id)
+            select(SoundPatternMastery).where(SoundPatternMastery.user_id == user_id)
         )
         pattern_masteries = pattern_result.scalars().all()
 
@@ -299,7 +345,9 @@ class AnalyticsService:
             if pm.accuracy < 0.7
         ]
 
-        listening_speed_scores = [s.listening_speed_max for s in stats if s.listening_speed_max is not None]
+        listening_speed_scores = [
+            s.listening_speed_max for s in stats if s.listening_speed_max is not None
+        ]
         max_speed = max(listening_speed_scores) if listening_speed_scores else 1.0
 
         listening = ListeningSkill(
@@ -319,20 +367,22 @@ class AnalyticsService:
         # --- 語彙 ---
         # 復習アイテムから語彙統計を計算
         vocab_result = await db.execute(
-            select(func.count(ReviewItem.id))
-            .where(
+            select(func.count(ReviewItem.id)).where(
                 ReviewItem.user_id == user_id,
-                ReviewItem.item_type.in_(["vocabulary", "expression", "flash_translation"]),
+                ReviewItem.item_type.in_(
+                    ["vocabulary", "expression", "flash_translation"]
+                ),
             )
         )
         total_vocab = vocab_result.scalar() or 0
 
         recent_vocab_result = await db.execute(
-            select(func.count(ReviewItem.id))
-            .where(
+            select(func.count(ReviewItem.id)).where(
                 ReviewItem.user_id == user_id,
-                ReviewItem.item_type.in_(["vocabulary", "expression", "flash_translation"]),
-                ReviewItem.created_at >= datetime.now(timezone.utc) - timedelta(days=7),
+                ReviewItem.item_type.in_(
+                    ["vocabulary", "expression", "flash_translation"]
+                ),
+                ReviewItem.created_at >= datetime.now(UTC) - timedelta(days=7),
             )
         )
         new_this_week = recent_vocab_result.scalar() or 0
@@ -390,8 +440,7 @@ class AnalyticsService:
 
         # 音声パターン習熟度から音素別スコアを取得
         pattern_result = await db.execute(
-            select(SoundPatternMastery)
-            .where(SoundPatternMastery.user_id == user_id)
+            select(SoundPatternMastery).where(SoundPatternMastery.user_id == user_id)
         )
         pattern_masteries = pattern_result.scalars().all()
 
@@ -431,9 +480,17 @@ class AnalyticsService:
         # ユーザー統計のサマリーを構築
         total_minutes = sum(s.practice_minutes for s in stats)
         total_sessions = sum(s.sessions_completed for s in stats)
-        grammar_scores = [s.grammar_accuracy for s in stats if s.grammar_accuracy is not None]
-        avg_grammar = sum(grammar_scores) / len(grammar_scores) if grammar_scores else 0.0
-        pron_scores = [s.pronunciation_avg_score for s in stats if s.pronunciation_avg_score is not None]
+        grammar_scores = [
+            s.grammar_accuracy for s in stats if s.grammar_accuracy is not None
+        ]
+        avg_grammar = (
+            sum(grammar_scores) / len(grammar_scores) if grammar_scores else 0.0
+        )
+        pron_scores = [
+            s.pronunciation_avg_score
+            for s in stats
+            if s.pronunciation_avg_score is not None
+        ]
         avg_pron = sum(pron_scores) / len(pron_scores) if pron_scores else 0.0
 
         user_stats = {
@@ -457,15 +514,16 @@ class AnalyticsService:
 
         # 音声パターンの弱点
         pattern_result = await db.execute(
-            select(SoundPatternMastery)
-            .where(
+            select(SoundPatternMastery).where(
                 SoundPatternMastery.user_id == user_id,
                 SoundPatternMastery.accuracy < 0.6,
             )
         )
         weak_patterns = pattern_result.scalars().all()
         for wp in weak_patterns:
-            weak_areas.append(f"sound pattern: {wp.pattern_type} ({wp.accuracy:.0%} accuracy)")
+            weak_areas.append(
+                f"sound pattern: {wp.pattern_type} ({wp.accuracy:.0%} accuracy)"
+            )
 
         system_prompt = build_recommendation_prompt(user_stats, weak_areas)
 
@@ -484,7 +542,11 @@ class AnalyticsService:
                 system=system_prompt,
             )
 
-            recommendations_data = result if isinstance(result, list) else result.get("recommendations", [])
+            recommendations_data = (
+                result
+                if isinstance(result, list)
+                else result.get("recommendations", [])
+            )
 
             recommendations = []
             for item in recommendations_data:
@@ -494,7 +556,9 @@ class AnalyticsService:
                         title=item.get("title", ""),
                         description=item.get("description", ""),
                         priority=min(max(int(item.get("priority", 3)), 1), 5),
-                        suggested_exercise_type=item.get("suggested_exercise_type", "conversation"),
+                        suggested_exercise_type=item.get(
+                            "suggested_exercise_type", "conversation"
+                        ),
                     )
                 )
 
@@ -586,12 +650,14 @@ class AnalyticsService:
             week_end = current + timedelta(days=6)
             week_stats = [s for s in stats if current <= s.date <= week_end]
 
-            weeks.append({
-                "week": week_num,
-                "minutes": sum(s.practice_minutes for s in week_stats),
-                "sessions": sum(s.sessions_completed for s in week_stats),
-                "reviews": sum(s.reviews_completed for s in week_stats),
-            })
+            weeks.append(
+                {
+                    "week": week_num,
+                    "minutes": sum(s.practice_minutes for s in week_stats),
+                    "sessions": sum(s.sessions_completed for s in week_stats),
+                    "reviews": sum(s.reviews_completed for s in week_stats),
+                }
+            )
 
             current = week_end + timedelta(days=1)
             week_num += 1
@@ -605,15 +671,27 @@ class AnalyticsService:
 
         stats = await self._get_daily_stats(user_id, thirty_days_ago, today, db)
 
-        grammar_scores = [s.grammar_accuracy for s in stats if s.grammar_accuracy is not None]
-        pron_scores = [s.pronunciation_avg_score for s in stats if s.pronunciation_avg_score is not None]
+        grammar_scores = [
+            s.grammar_accuracy for s in stats if s.grammar_accuracy is not None
+        ]
+        pron_scores = [
+            s.pronunciation_avg_score
+            for s in stats
+            if s.pronunciation_avg_score is not None
+        ]
 
         return {
-            "speaking": round(sum(grammar_scores) / len(grammar_scores), 2) if grammar_scores else 0.0,
+            "speaking": round(sum(grammar_scores) / len(grammar_scores), 2)
+            if grammar_scores
+            else 0.0,
             "listening": 0.5,
             "vocabulary": 0.5,
-            "grammar": round(sum(grammar_scores) / len(grammar_scores), 2) if grammar_scores else 0.0,
-            "pronunciation": round(sum(pron_scores) / len(pron_scores), 2) if pron_scores else 0.0,
+            "grammar": round(sum(grammar_scores) / len(grammar_scores), 2)
+            if grammar_scores
+            else 0.0,
+            "pronunciation": round(sum(pron_scores) / len(pron_scores), 2)
+            if pron_scores
+            else 0.0,
         }
 
     def _evaluate_achievements(
@@ -626,46 +704,60 @@ class AnalyticsService:
         achievements = []
 
         if total_minutes >= 600:
-            achievements.append(Achievement(
-                title="Marathon Learner",
-                description="10 hours of practice this month!",
-                icon="fire",
-            ))
+            achievements.append(
+                Achievement(
+                    title="Marathon Learner",
+                    description="10 hours of practice this month!",
+                    icon="fire",
+                )
+            )
         elif total_minutes >= 300:
-            achievements.append(Achievement(
-                title="Dedicated Student",
-                description="5 hours of practice this month!",
-                icon="star",
-            ))
+            achievements.append(
+                Achievement(
+                    title="Dedicated Student",
+                    description="5 hours of practice this month!",
+                    icon="star",
+                )
+            )
 
         if total_sessions >= 30:
-            achievements.append(Achievement(
-                title="Daily Practitioner",
-                description="30 sessions completed this month!",
-                icon="calendar",
-            ))
+            achievements.append(
+                Achievement(
+                    title="Daily Practitioner",
+                    description="30 sessions completed this month!",
+                    icon="calendar",
+                )
+            )
 
         streak = self._calculate_best_streak_in_range(stats)
         if streak >= 14:
-            achievements.append(Achievement(
-                title="Two-Week Streak",
-                description="14 consecutive days of practice!",
-                icon="trophy",
-            ))
+            achievements.append(
+                Achievement(
+                    title="Two-Week Streak",
+                    description="14 consecutive days of practice!",
+                    icon="trophy",
+                )
+            )
         elif streak >= 7:
-            achievements.append(Achievement(
-                title="Week Warrior",
-                description="7 consecutive days of practice!",
-                icon="medal",
-            ))
+            achievements.append(
+                Achievement(
+                    title="Week Warrior",
+                    description="7 consecutive days of practice!",
+                    icon="medal",
+                )
+            )
 
-        grammar_scores = [s.grammar_accuracy for s in stats if s.grammar_accuracy is not None]
+        grammar_scores = [
+            s.grammar_accuracy for s in stats if s.grammar_accuracy is not None
+        ]
         if grammar_scores and max(grammar_scores) >= 0.95:
-            achievements.append(Achievement(
-                title="Grammar Master",
-                description="Achieved 95%+ grammar accuracy!",
-                icon="brain",
-            ))
+            achievements.append(
+                Achievement(
+                    title="Grammar Master",
+                    description="Achieved 95%+ grammar accuracy!",
+                    icon="brain",
+                )
+            )
 
         return achievements
 
@@ -677,8 +769,14 @@ class AnalyticsService:
         strengths = []
         weaknesses = []
 
-        grammar_scores = [s.grammar_accuracy for s in stats if s.grammar_accuracy is not None]
-        pron_scores = [s.pronunciation_avg_score for s in stats if s.pronunciation_avg_score is not None]
+        grammar_scores = [
+            s.grammar_accuracy for s in stats if s.grammar_accuracy is not None
+        ]
+        pron_scores = [
+            s.pronunciation_avg_score
+            for s in stats
+            if s.pronunciation_avg_score is not None
+        ]
 
         if grammar_scores:
             avg_grammar = sum(grammar_scores) / len(grammar_scores)
@@ -712,39 +810,47 @@ class AnalyticsService:
         recommendations = []
 
         if user_stats.get("avg_grammar_accuracy", 1.0) < 0.7:
-            recommendations.append(Recommendation(
-                category="grammar",
-                title="Strengthen Grammar Patterns",
-                description="Your grammar accuracy is below target. Try focused flash translation exercises with grammar patterns you find challenging.",
-                priority=1,
-                suggested_exercise_type="flash_translation",
-            ))
+            recommendations.append(
+                Recommendation(
+                    category="grammar",
+                    title="Strengthen Grammar Patterns",
+                    description="Your grammar accuracy is below target. Try focused flash translation exercises with grammar patterns you find challenging.",
+                    priority=1,
+                    suggested_exercise_type="flash_translation",
+                )
+            )
 
         if user_stats.get("avg_pronunciation_score", 1.0) < 0.6:
-            recommendations.append(Recommendation(
-                category="pronunciation",
-                title="Improve Pronunciation Accuracy",
-                description="Work on pronunciation exercises focusing on phonemes that are challenging for Japanese speakers.",
-                priority=2,
-                suggested_exercise_type="pronunciation",
-            ))
+            recommendations.append(
+                Recommendation(
+                    category="pronunciation",
+                    title="Improve Pronunciation Accuracy",
+                    description="Work on pronunciation exercises focusing on phonemes that are challenging for Japanese speakers.",
+                    priority=2,
+                    suggested_exercise_type="pronunciation",
+                )
+            )
 
         if user_stats.get("total_practice_minutes_last_7_days", 0) < 70:
-            recommendations.append(Recommendation(
-                category="speaking",
-                title="Increase Daily Practice",
-                description="Try to maintain at least 10 minutes of practice per day for optimal progress.",
-                priority=2,
-                suggested_exercise_type="conversation",
-            ))
+            recommendations.append(
+                Recommendation(
+                    category="speaking",
+                    title="Increase Daily Practice",
+                    description="Try to maintain at least 10 minutes of practice per day for optimal progress.",
+                    priority=2,
+                    suggested_exercise_type="conversation",
+                )
+            )
 
-        recommendations.append(Recommendation(
-            category="listening",
-            title="Connected Speech Practice",
-            description="Practice recognizing natural sound changes in English to improve listening comprehension.",
-            priority=3,
-            suggested_exercise_type="mogomogo",
-        ))
+        recommendations.append(
+            Recommendation(
+                category="listening",
+                title="Connected Speech Practice",
+                description="Practice recognizing natural sound changes in English to improve listening comprehension.",
+                priority=3,
+                suggested_exercise_type="mogomogo",
+            )
+        )
 
         return recommendations
 

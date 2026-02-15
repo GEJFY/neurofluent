@@ -51,7 +51,12 @@ class TestLLMService:
         service = LLMService.__new__(LLMService)
         service.router = MagicMock()
         service.router.get_usage_info = AsyncMock(
-            return_value={"text": "hi", "input_tokens": 10, "output_tokens": 5, "model": "test"}
+            return_value={
+                "text": "hi",
+                "input_tokens": 10,
+                "output_tokens": 5,
+                "model": "test",
+            }
         )
 
         result = await service.get_usage_info(

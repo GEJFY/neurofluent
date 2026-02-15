@@ -1,6 +1,6 @@
 """ヘルスチェックAPI 詳細テスト"""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 from httpx import AsyncClient

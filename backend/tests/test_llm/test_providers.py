@@ -230,6 +230,9 @@ class TestAzureFoundryProvider:
                     == "You are a business English tutor."
                 )
                 assert request_body["messages"][1]["role"] == "user"
+                # GPT-5は max_completion_tokens を使用（max_tokensではない）
+                assert "max_completion_tokens" in request_body
+                assert "max_tokens" not in request_body
 
     @pytest.mark.asyncio
     @respx.mock

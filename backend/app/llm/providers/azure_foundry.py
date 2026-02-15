@@ -58,16 +58,16 @@ class AzureFoundryProvider(LLMProvider):
         max_tokens: int,
         system: str | None,
     ) -> dict:
-        """OpenAI形式のリクエストボディを構築"""
+        """OpenAI形式のリクエストボディを構築（GPT-5は max_completion_tokens を使用）"""
         openai_messages = []
         if system:
             openai_messages.append({"role": "system", "content": system})
         openai_messages.extend(messages)
 
+        # GPT-5はtemperatureカスタム値非対応（デフォルト1のみ）
         return {
             "messages": openai_messages,
-            "max_tokens": max_tokens,
-            "temperature": 0.7,
+            "max_completion_tokens": max_tokens,
         }
 
     @staticmethod
@@ -91,7 +91,7 @@ class AzureFoundryProvider(LLMProvider):
         self,
         messages: list[dict],
         model: str = "haiku",
-        max_tokens: int = 2048,
+        max_tokens: int = 4096,
         system: str | None = None,
     ) -> str:
         """GPT-5にメッセージを送信してテキスト応答を取得"""
@@ -124,7 +124,7 @@ class AzureFoundryProvider(LLMProvider):
         self,
         messages: list[dict],
         model: str = "haiku",
-        max_tokens: int = 2048,
+        max_tokens: int = 4096,
         system: str | None = None,
     ) -> dict:
         """GPT-5にメッセージを送信してJSON応答を取得・パース"""
@@ -135,7 +135,7 @@ class AzureFoundryProvider(LLMProvider):
         self,
         messages: list[dict],
         model: str = "haiku",
-        max_tokens: int = 2048,
+        max_tokens: int = 4096,
         system: str | None = None,
     ) -> dict:
         """GPT-5 APIを呼び出し、レスポンスとトークン使用量を返す"""

@@ -8,7 +8,7 @@ FSRS (Free Spaced Repetition Scheduler) の実装。
 
 import math
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 
 @dataclass
@@ -20,7 +20,7 @@ class FSRSCard:
     interval: float = 0.0
     repetitions: int = 0
     ease_factor: float = 2.5
-    next_review: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    next_review: datetime = field(default_factory=lambda: datetime.now(UTC))
     last_review: datetime | None = None
 
 
@@ -44,25 +44,25 @@ class FSRS:
 
         # 重みパラメータ（w0〜w18）
         self.w = [
-            0.4,    # w0: 初期安定度調整
-            0.9,    # w1
-            2.3,    # w2
-            6.0,    # w3
-            7.0,    # w4: 難易度の初期値影響
-            0.5,    # w5: 難易度更新の平均回帰係数
-            1.2,    # w6: 難易度更新のレーティング影響
-            0.01,   # w7: 安定度成功時の基本増加率
-            1.5,    # w8: 安定度と難易度の交互作用
-            0.1,    # w9: 安定度に対する記憶度の影響
-            1.0,    # w10: 安定度の自己参照係数
-            2.0,    # w11: 失敗時の安定度減衰
-            0.02,   # w12: 失敗時の難易度影響
-            0.3,    # w13: 失敗時の安定度影響
-            0.5,    # w14: Hard時の安定度ペナルティ
-            2.0,    # w15: Easy時の安定度ボーナス
-            0.2,    # w16: 記憶度の追加影響
-            3.0,    # w17: 短期記憶の減衰
-            0.7,    # w18: 追加パラメータ
+            0.4,  # w0: 初期安定度調整
+            0.9,  # w1
+            2.3,  # w2
+            6.0,  # w3
+            7.0,  # w4: 難易度の初期値影響
+            0.5,  # w5: 難易度更新の平均回帰係数
+            1.2,  # w6: 難易度更新のレーティング影響
+            0.01,  # w7: 安定度成功時の基本増加率
+            1.5,  # w8: 安定度と難易度の交互作用
+            0.1,  # w9: 安定度に対する記憶度の影響
+            1.0,  # w10: 安定度の自己参照係数
+            2.0,  # w11: 失敗時の安定度減衰
+            0.02,  # w12: 失敗時の難易度影響
+            0.3,  # w13: 失敗時の安定度影響
+            0.5,  # w14: Hard時の安定度ペナルティ
+            2.0,  # w15: Easy時の安定度ボーナス
+            0.2,  # w16: 記憶度の追加影響
+            3.0,  # w17: 短期記憶の減衰
+            0.7,  # w18: 追加パラメータ
         ]
 
     def _clamp(self, value: float, min_val: float, max_val: float) -> float:
@@ -87,9 +87,7 @@ class FSRS:
         """
         if stability <= 0:
             return 1.0
-        interval = stability * (
-            (1 / self.desired_retention) ** (1 / self.decay) - 1
-        )
+        interval = stability * ((1 / self.desired_retention) ** (1 / self.decay) - 1)
         return max(1.0, interval)
 
     def _initial_difficulty(self, rating: int) -> float:
@@ -165,7 +163,9 @@ class FSRS:
         # 失敗時の安定度は前回より小さくなるべき
         return max(0.1, min(new_s, stability))
 
-    def review(self, card: FSRSCard, rating: int, elapsed_days: float | None = None) -> FSRSCard:
+    def review(
+        self, card: FSRSCard, rating: int, elapsed_days: float | None = None
+    ) -> FSRSCard:
         """
         復習結果に基づいてカード状態を更新
 
@@ -178,7 +178,7 @@ class FSRS:
             更新後のFSRSCard
         """
         rating = self._clamp(rating, 1, 4)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # 経過日数の計算
         if elapsed_days is None:

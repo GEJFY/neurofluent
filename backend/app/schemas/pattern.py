@@ -16,10 +16,7 @@ class PatternExercise(BaseModel):
         description="カテゴリ: meeting, negotiation, presentation, email, discussion, general"
     )
     difficulty: str = Field(description="難易度レベル（A2, B1, B2, C1, C2）")
-    fill_in_blank: bool = Field(
-        default=False,
-        description="穴埋め形式かどうか"
-    )
+    fill_in_blank: bool = Field(default=False, description="穴埋め形式かどうか")
 
     model_config = {"from_attributes": True}
 
@@ -39,10 +36,7 @@ class PatternCheckResult(BaseModel):
     score: float = Field(ge=0.0, le=1.0, description="正答スコア（0.0〜1.0）")
     corrected: str = Field(description="修正後の正解文")
     explanation: str = Field(description="解説・フィードバック")
-    usage_tip: str = Field(
-        default="",
-        description="実践的な使用アドバイス"
-    )
+    usage_tip: str = Field(default="", description="実践的な使用アドバイス")
 
     model_config = {"from_attributes": True}
 

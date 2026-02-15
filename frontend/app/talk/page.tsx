@@ -14,7 +14,7 @@ import { useTalkStore } from "@/lib/stores/talk-store";
  */
 
 const TALK_MODES = [
-  { id: "casual_chat", label: "Casual Chat", description: "自由に英会話を楽しもう" },
+  { id: "casual_chat", label: "Casual Chat", description: "自由に英会話を楽しもう", disabled: false },
   { id: "business", label: "Business", description: "ビジネス英語の練習", disabled: true },
   { id: "interview", label: "Interview", description: "面接対策", disabled: true },
 ] as const;

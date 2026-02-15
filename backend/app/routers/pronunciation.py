@@ -5,7 +5,7 @@
 エクササイズ生成と、Azure Speech APIを用いた発音評価。
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from sqlalchemy import select
@@ -13,16 +13,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.user import User
 from app.models.sound_pattern import SoundPatternMastery
+from app.models.user import User
 from app.schemas.pronunciation import (
-    PronunciationExercise,
-    PhonemeResult,
-    PronunciationEvaluateRequest,
-    ProsodyExercise,
     JapaneseSpeakerPhoneme,
+    PhonemeResult,
+    PronunciationExercise,
     PronunciationOverallProgress,
     PronunciationProgressItem,
+    ProsodyExercise,
 )
 from app.services.pronunciation_service import pronunciation_service
 
@@ -183,7 +182,9 @@ async def get_pronunciation_progress(
         # トレンド判定
         trend = "stable"
         if len(entries) >= 2:
-            sorted_entries = sorted(entries, key=lambda e: e.last_practiced_at or e.created_at)
+            sorted_entries = sorted(
+                entries, key=lambda e: e.last_practiced_at or e.created_at
+            )
             recent = sorted_entries[-1].accuracy
             older = sorted_entries[0].accuracy
             if recent > older + 0.1:
@@ -191,12 +192,14 @@ async def get_pronunciation_progress(
             elif recent < older - 0.1:
                 trend = "declining"
 
-        phoneme_progress.append(PronunciationProgressItem(
-            phoneme=phoneme,
-            accuracy=round(avg_accuracy, 3),
-            practice_count=total_practice,
-            trend=trend,
-        ))
+        phoneme_progress.append(
+            PronunciationProgressItem(
+                phoneme=phoneme,
+                accuracy=round(avg_accuracy, 3),
+                practice_count=total_practice,
+                trend=trend,
+            )
+        )
 
     overall = total_accuracy_sum / len(phoneme_map) if phoneme_map else 0.0
 
@@ -216,6 +219,7 @@ async def get_pronunciation_progress(
 
 # --- ヘルパー関数 ---
 
+
 async def _update_pronunciation_mastery(
     user_id,
     pattern_type: str,
@@ -233,7 +237,7 @@ async def _update_pronunciation_mastery(
     )
     mastery = result.scalar_one_or_none()
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     if mastery is None:
         mastery = SoundPatternMastery(

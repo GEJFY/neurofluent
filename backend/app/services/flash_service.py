@@ -3,12 +3,12 @@
 import logging
 import uuid
 
-from app.schemas.speaking import FlashExercise, FlashCheckResponse
-from app.services.claude_service import claude_service
 from app.prompts.flash_translation import (
-    build_flash_generation_prompt,
     build_flash_check_prompt,
+    build_flash_generation_prompt,
 )
+from app.schemas.speaking import FlashCheckResponse, FlashExercise
+from app.services.claude_service import claude_service
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,9 @@ class FlashService:
         focus_text = f"Focus area: {focus}" if focus else "General business English"
         weak_text = ""
         if weak_patterns:
-            weak_text = f"\nUser's weak patterns to reinforce: {', '.join(weak_patterns)}"
+            weak_text = (
+                f"\nUser's weak patterns to reinforce: {', '.join(weak_patterns)}"
+            )
 
         messages = [
             {
@@ -62,7 +64,9 @@ class FlashService:
                 system=system_prompt,
             )
 
-            exercises_data = result if isinstance(result, list) else result.get("exercises", [])
+            exercises_data = (
+                result if isinstance(result, list) else result.get("exercises", [])
+            )
 
             exercises = []
             for item in exercises_data:
@@ -120,7 +124,7 @@ class FlashService:
 
         alt_text = ""
         if alternatives:
-            alt_text = f"\nAcceptable alternatives:\n" + "\n".join(
+            alt_text = "\nAcceptable alternatives:\n" + "\n".join(
                 f"- {alt}" for alt in alternatives
             )
 

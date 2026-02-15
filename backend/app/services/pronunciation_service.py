@@ -11,18 +11,18 @@ import uuid
 import httpx
 
 from app.config import settings
-from app.schemas.pronunciation import (
-    PronunciationExercise,
-    PhonemeResult,
-    ProsodyExercise,
-    JapaneseSpeakerPhoneme,
-)
-from app.services.claude_service import claude_service
 from app.prompts.pronunciation import (
+    JAPANESE_L1_INTERFERENCE,
     build_pronunciation_exercise_prompt,
     build_prosody_exercise_prompt,
-    JAPANESE_L1_INTERFERENCE,
 )
+from app.schemas.pronunciation import (
+    JapaneseSpeakerPhoneme,
+    PhonemeResult,
+    PronunciationExercise,
+    ProsodyExercise,
+)
+from app.services.claude_service import claude_service
 
 logger = logging.getLogger(__name__)
 
@@ -55,9 +55,7 @@ class PronunciationService:
             PronunciationExerciseのリスト
         """
         # 有効な音素のみフィルタ
-        valid_phonemes = [
-            p for p in target_phonemes if p in JAPANESE_L1_INTERFERENCE
-        ]
+        valid_phonemes = [p for p in target_phonemes if p in JAPANESE_L1_INTERFERENCE]
         if not valid_phonemes:
             valid_phonemes = ["/r/-/l/"]
 
@@ -88,7 +86,9 @@ class PronunciationService:
                 system=system_prompt,
             )
 
-            exercises_data = result if isinstance(result, list) else result.get("exercises", [])
+            exercises_data = (
+                result if isinstance(result, list) else result.get("exercises", [])
+            )
 
             exercises = []
             for item in exercises_data:
@@ -151,6 +151,7 @@ class PronunciationService:
 
         import base64
         import json
+
         config_json = json.dumps(pronunciation_config)
         config_base64 = base64.b64encode(config_json.encode()).decode()
 
@@ -250,19 +251,23 @@ class PronunciationService:
                 system=system_prompt,
             )
 
-            exercises_data = result if isinstance(result, list) else result.get("exercises", [])
+            exercises_data = (
+                result if isinstance(result, list) else result.get("exercises", [])
+            )
 
             exercises = []
             for item in exercises_data:
-                exercises.append(ProsodyExercise(
-                    exercise_id=item.get("exercise_id", str(uuid.uuid4())),
-                    sentence=item.get("sentence", ""),
-                    stress_pattern=item.get("stress_pattern", ""),
-                    intonation_type=item.get("intonation_type", "falling"),
-                    audio_url=item.get("audio_url"),
-                    explanation=item.get("explanation", ""),
-                    context=item.get("context", ""),
-                ))
+                exercises.append(
+                    ProsodyExercise(
+                        exercise_id=item.get("exercise_id", str(uuid.uuid4())),
+                        sentence=item.get("sentence", ""),
+                        stress_pattern=item.get("stress_pattern", ""),
+                        intonation_type=item.get("intonation_type", "falling"),
+                        audio_url=item.get("audio_url"),
+                        explanation=item.get("explanation", ""),
+                        context=item.get("context", ""),
+                    )
+                )
 
             return exercises
 
@@ -295,10 +300,12 @@ class PronunciationService:
             phonemes = word.get("Phonemes", [])
             for phoneme in phonemes:
                 phoneme_assessment = phoneme.get("PronunciationAssessment", {})
-                phoneme_details.append({
-                    "phoneme": phoneme.get("Phoneme", ""),
-                    "accuracy": phoneme_assessment.get("AccuracyScore", 0.0),
-                })
+                phoneme_details.append(
+                    {
+                        "phoneme": phoneme.get("Phoneme", ""),
+                        "accuracy": phoneme_assessment.get("AccuracyScore", 0.0),
+                    }
+                )
 
         # フィードバック生成
         is_correct = accuracy_score >= 0.7
@@ -306,7 +313,9 @@ class PronunciationService:
         if accuracy_score >= 0.9:
             feedback = "Excellent pronunciation! Your articulation is very clear."
         elif accuracy_score >= 0.7:
-            feedback = "Good pronunciation! A few minor adjustments would make it even better."
+            feedback = (
+                "Good pronunciation! A few minor adjustments would make it even better."
+            )
         elif accuracy_score >= 0.5:
             feedback = "Getting there! Focus on the specific phoneme contrast in this exercise."
         else:
@@ -367,51 +376,57 @@ class PronunciationService:
             for a, b in data["minimal_pairs"]:
                 if exercise_count >= count:
                     break
-                exercises.append(PronunciationExercise(
-                    exercise_id=str(uuid.uuid4()),
-                    target_phoneme=phoneme,
-                    exercise_type="minimal_pair",
-                    word_a=a,
-                    word_b=b,
-                    sentence=f"Can you hear the difference between '{a}' and '{b}'?",
-                    ipa=f"/{a}/ vs /{b}/",
-                    difficulty=level,
-                    tip=data["tip"],
-                ))
+                exercises.append(
+                    PronunciationExercise(
+                        exercise_id=str(uuid.uuid4()),
+                        target_phoneme=phoneme,
+                        exercise_type="minimal_pair",
+                        word_a=a,
+                        word_b=b,
+                        sentence=f"Can you hear the difference between '{a}' and '{b}'?",
+                        ipa=f"/{a}/ vs /{b}/",
+                        difficulty=level,
+                        tip=data["tip"],
+                    )
+                )
                 exercise_count += 1
 
             # 練習文
             for sentence in data["practice_sentences"]:
                 if exercise_count >= count:
                     break
-                exercises.append(PronunciationExercise(
-                    exercise_id=str(uuid.uuid4()),
-                    target_phoneme=phoneme,
-                    exercise_type="sentence",
-                    word_a=sentence.split()[0],
-                    word_b=None,
-                    sentence=sentence,
-                    ipa="",
-                    difficulty=level,
-                    tip=data["tip"],
-                ))
+                exercises.append(
+                    PronunciationExercise(
+                        exercise_id=str(uuid.uuid4()),
+                        target_phoneme=phoneme,
+                        exercise_type="sentence",
+                        word_a=sentence.split()[0],
+                        word_b=None,
+                        sentence=sentence,
+                        ipa="",
+                        difficulty=level,
+                        tip=data["tip"],
+                    )
+                )
                 exercise_count += 1
 
             # 早口言葉
             for tw in data["tongue_twisters"]:
                 if exercise_count >= count:
                     break
-                exercises.append(PronunciationExercise(
-                    exercise_id=str(uuid.uuid4()),
-                    target_phoneme=phoneme,
-                    exercise_type="tongue_twister",
-                    word_a=tw,
-                    word_b=None,
-                    sentence=tw,
-                    ipa="",
-                    difficulty=level,
-                    tip=data["tip"],
-                ))
+                exercises.append(
+                    PronunciationExercise(
+                        exercise_id=str(uuid.uuid4()),
+                        target_phoneme=phoneme,
+                        exercise_type="tongue_twister",
+                        word_a=tw,
+                        word_b=None,
+                        sentence=tw,
+                        ipa="",
+                        difficulty=level,
+                        tip=data["tip"],
+                    )
+                )
                 exercise_count += 1
 
             if exercise_count >= count:
@@ -433,7 +448,7 @@ class PronunciationService:
                     stress_pattern="Shift stress to each word for different meanings",
                     intonation_type="falling",
                     explanation="In English, changing which word is stressed changes the meaning entirely. "
-                               "Japanese relies more on particles and word order for emphasis.",
+                    "Japanese relies more on particles and word order for emphasis.",
                     context="Clarifying a misunderstanding in a meeting",
                 ),
                 ProsodyExercise(
@@ -442,7 +457,7 @@ class PronunciationService:
                     stress_pattern="preSENT (verb) vs PREsent (noun)",
                     intonation_type="falling",
                     explanation="English stress can change word class: PREsent (noun) vs preSENT (verb). "
-                               "This doesn't exist in Japanese.",
+                    "This doesn't exist in Japanese.",
                     context="Discussing a gift for a company executive",
                 ),
                 ProsodyExercise(
@@ -451,7 +466,7 @@ class PronunciationService:
                     stress_pattern="oOo - content words stressed, function words weak",
                     intonation_type="falling",
                     explanation="English stresses content words (nouns, verbs, adjectives) and reduces function words. "
-                               "Japanese gives more equal weight to all syllables.",
+                    "Japanese gives more equal weight to all syllables.",
                     context="Status update in a project meeting",
                 ),
             ],
@@ -462,7 +477,7 @@ class PronunciationService:
                     stress_pattern="Oo Oo Oo - stress-timed rhythm",
                     intonation_type="falling",
                     explanation="English is stress-timed: stressed syllables occur at regular intervals. "
-                               "Unstressed syllables are compressed. Japanese is mora-timed with equal beats.",
+                    "Unstressed syllables are compressed. Japanese is mora-timed with equal beats.",
                     context="Understanding English speech rhythm",
                 ),
             ],
@@ -473,7 +488,7 @@ class PronunciationService:
                     stress_pattern="Rising at the end",
                     intonation_type="rising",
                     explanation="Rising intonation turns a statement into a question in English. "
-                               "Japanese uses the particle 'ka' instead of intonation for questions.",
+                    "Japanese uses the particle 'ka' instead of intonation for questions.",
                     context="Confirming attendance at a meeting",
                 ),
                 ProsodyExercise(
@@ -482,7 +497,7 @@ class PronunciationService:
                     stress_pattern="Fall-rise on 'interesting', trailing off",
                     intonation_type="fall-rise",
                     explanation="Fall-rise intonation in English implies reservation or disagreement. "
-                               "It's a polite way to signal 'I have concerns' without saying it directly.",
+                    "It's a polite way to signal 'I have concerns' without saying it directly.",
                     context="Diplomatically expressing doubt in a negotiation",
                 ),
             ],

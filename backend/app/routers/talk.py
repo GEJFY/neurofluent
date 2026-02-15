@@ -1,27 +1,26 @@
 """会話練習(Talk)ルーター - AIとの会話セッション管理"""
 
 import uuid
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.models.conversation import ConversationMessage, ConversationSession
 from app.models.user import User
-from app.models.conversation import ConversationSession, ConversationMessage
+from app.prompts.conversation import build_conversation_system_prompt
 from app.schemas.talk import (
-    TalkStartRequest,
+    FeedbackData,
+    SessionListResponse,
+    SessionResponse,
     TalkMessageRequest,
     TalkMessageResponse,
-    SessionResponse,
-    SessionListResponse,
-    FeedbackData,
+    TalkStartRequest,
 )
 from app.services.claude_service import claude_service
 from app.services.feedback_service import feedback_service
-from app.prompts.conversation import build_conversation_system_prompt
 
 router = APIRouter()
 

@@ -17,21 +17,12 @@ class PronunciationExercise(BaseModel):
         description="エクササイズ種別: minimal_pair, tongue_twister, sentence"
     )
     word_a: str = Field(description="単語A（ミニマルペアの場合）またはメイン単語")
-    word_b: str | None = Field(
-        default=None,
-        description="単語B（ミニマルペアの場合）"
-    )
+    word_b: str | None = Field(default=None, description="単語B（ミニマルペアの場合）")
     sentence: str = Field(description="練習文")
     ipa: str = Field(description="IPA表記")
-    audio_url: str | None = Field(
-        default=None,
-        description="音声URL（TTS生成の場合）"
-    )
+    audio_url: str | None = Field(default=None, description="音声URL（TTS生成の場合）")
     difficulty: str = Field(default="B2", description="難易度レベル")
-    tip: str = Field(
-        default="",
-        description="発音のコツ（日本語話者向け）"
-    )
+    tip: str = Field(default="", description="発音のコツ（日本語話者向け）")
 
 
 class PhonemeResult(BaseModel):
@@ -42,8 +33,7 @@ class PhonemeResult(BaseModel):
     is_correct: bool = Field(description="正しく発音できたか")
     feedback: str = Field(description="フィードバックコメント")
     common_error_pattern: str = Field(
-        default="",
-        description="該当する一般的な間違いパターン"
+        default="", description="該当する一般的な間違いパターン"
     )
 
 
@@ -60,9 +50,7 @@ class ProsodyExercise(BaseModel):
 
     exercise_id: str = Field(description="エクササイズの一意識別子")
     sentence: str = Field(description="練習文")
-    stress_pattern: str = Field(
-        description="ストレスパターン (例: 'oOo' = 弱強弱)"
-    )
+    stress_pattern: str = Field(description="ストレスパターン (例: 'oOo' = 弱強弱)")
     intonation_type: str = Field(
         description="イントネーション種別: rising, falling, rise-fall, fall-rise"
     )
@@ -79,8 +67,7 @@ class JapaneseSpeakerPhoneme(BaseModel):
     description_en: str = Field(default="", description="英語での問題説明")
     examples: list[str] = Field(default_factory=list, description="例文リスト")
     practice_words: list[str] = Field(
-        default_factory=list,
-        description="練習用単語リスト"
+        default_factory=list, description="練習用単語リスト"
     )
     common_mistake: str = Field(default="", description="よくある間違いの説明")
     tip: str = Field(default="", description="発音のコツ")

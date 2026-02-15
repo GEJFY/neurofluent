@@ -5,7 +5,6 @@
 """
 
 from datetime import datetime
-from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -28,13 +27,9 @@ class ComprehensionMaterial(BaseModel):
     difficulty: str = Field(description="難易度: beginner, intermediate, advanced")
     duration_seconds: int = Field(description="推定音声長（秒）")
     vocabulary: list[VocabularyItem] = Field(
-        default_factory=list,
-        description="重要語彙リスト"
+        default_factory=list, description="重要語彙リスト"
     )
-    key_points: list[str] = Field(
-        default_factory=list,
-        description="要点リスト"
-    )
+    key_points: list[str] = Field(default_factory=list, description="要点リスト")
 
 
 class ComprehensionQuestion(BaseModel):
@@ -42,12 +37,9 @@ class ComprehensionQuestion(BaseModel):
 
     question_id: str = Field(description="問題の一意識別子")
     question_text: str = Field(description="問題文")
-    question_type: str = Field(
-        description="問題種別: multiple_choice, summary"
-    )
+    question_type: str = Field(description="問題種別: multiple_choice, summary")
     options: list[str] | None = Field(
-        default=None,
-        description="選択肢リスト（multiple_choiceの場合）"
+        default=None, description="選択肢リスト（multiple_choiceの場合）"
     )
     correct_answer: str = Field(description="正解")
 
@@ -81,12 +73,10 @@ class SummaryResult(BaseModel):
     score: float = Field(ge=0.0, le=1.0, description="サマリースコア")
     feedback: str = Field(description="フィードバック")
     key_points_covered: list[str] = Field(
-        default_factory=list,
-        description="カバーされた要点"
+        default_factory=list, description="カバーされた要点"
     )
     key_points_missed: list[str] = Field(
-        default_factory=list,
-        description="見落とされた要点"
+        default_factory=list, description="見落とされた要点"
     )
 
 

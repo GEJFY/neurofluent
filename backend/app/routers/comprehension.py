@@ -4,8 +4,7 @@
 回答評価、過去の学習履歴を提供するエンドポイント群。
 """
 
-import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
@@ -13,17 +12,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.user import User
 from app.models.review import ReviewItem
+from app.models.user import User
 from app.schemas.comprehension import (
+    ComprehensionAnswerRequest,
+    ComprehensionHistory,
+    ComprehensionHistoryItem,
     ComprehensionMaterial,
     ComprehensionQuestion,
-    ComprehensionAnswerRequest,
     ComprehensionResult,
     SummaryCheckRequest,
     SummaryResult,
-    ComprehensionHistory,
-    ComprehensionHistoryItem,
 )
 from app.services.comprehension_service import comprehension_service
 
@@ -134,7 +133,7 @@ async def check_answer(
                 "correct_answer": result.correct_answer,
                 "explanation": result.explanation,
             },
-            next_review_at=datetime.now(timezone.utc),
+            next_review_at=datetime.now(UTC),
         )
         db.add(review_item)
         await db.commit()
@@ -165,10 +164,13 @@ async def check_summary(
 
     # ReviewItemから素材テキストの復元を試みる
     review_result = await db.execute(
-        select(ReviewItem).where(
+        select(ReviewItem)
+        .where(
             ReviewItem.user_id == current_user.id,
             ReviewItem.item_type == "comprehension_material",
-        ).order_by(ReviewItem.created_at.desc()).limit(1)
+        )
+        .order_by(ReviewItem.created_at.desc())
+        .limit(1)
     )
     recent_material = review_result.scalar_one_or_none()
 
@@ -215,7 +217,9 @@ async def get_comprehension_history(
     material_sessions: dict[str, dict] = {}
     for item in items:
         content = item.content or {}
-        material_id = content.get("material_id", content.get("question_id", str(item.id)))
+        material_id = content.get(
+            "material_id", content.get("question_id", str(item.id))
+        )
 
         if material_id not in material_sessions:
             material_sessions[material_id] = {
@@ -246,15 +250,17 @@ async def get_comprehension_history(
             else 0.0
         )
 
-        history_items.append(ComprehensionHistoryItem(
-            material_id=session["material_id"],
-            topic=session["topic"],
-            difficulty=session["difficulty"],
-            score=round(avg_score, 2),
-            completed_at=session["completed_at"],
-            questions_correct=session["correct_questions"],
-            questions_total=max(session["total_questions"], 1),
-        ))
+        history_items.append(
+            ComprehensionHistoryItem(
+                material_id=session["material_id"],
+                topic=session["topic"],
+                difficulty=session["difficulty"],
+                score=round(avg_score, 2),
+                completed_at=session["completed_at"],
+                questions_correct=session["correct_questions"],
+                questions_total=max(session["total_questions"], 1),
+            )
+        )
 
     # 全体統計
     total_sessions = len(history_items)

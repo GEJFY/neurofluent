@@ -11,10 +11,10 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.realtime import (
-    RealtimeSessionConfig,
-    RealtimeStartRequest,
     ConversationMode,
     ConversationModeList,
+    RealtimeSessionConfig,
+    RealtimeStartRequest,
 )
 from app.services.realtime_service import realtime_service
 

@@ -7,6 +7,12 @@ Claude Sonnetを使用してビジネス英語のリスニング素材を生成�
 import logging
 import uuid
 
+from app.prompts.comprehension import (
+    COMPREHENSION_TOPICS,
+    build_material_generation_prompt,
+    build_question_generation_prompt,
+    build_summary_evaluation_prompt,
+)
 from app.schemas.comprehension import (
     ComprehensionMaterial,
     ComprehensionQuestion,
@@ -15,12 +21,6 @@ from app.schemas.comprehension import (
     VocabularyItem,
 )
 from app.services.claude_service import claude_service
-from app.prompts.comprehension import (
-    build_material_generation_prompt,
-    build_question_generation_prompt,
-    build_summary_evaluation_prompt,
-    COMPREHENSION_TOPICS,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,9 @@ class ComprehensionService:
         Returns:
             ComprehensionMaterial: 生成されたリスニング素材
         """
-        system_prompt = build_material_generation_prompt(topic, difficulty, duration_minutes)
+        system_prompt = build_material_generation_prompt(
+            topic, difficulty, duration_minutes
+        )
 
         messages = [
             {
@@ -74,19 +76,23 @@ class ComprehensionService:
             # 語彙データのパース
             vocabulary = []
             for vocab in result.get("vocabulary", []):
-                vocabulary.append(VocabularyItem(
-                    word=vocab.get("word", ""),
-                    definition=vocab.get("definition", ""),
-                    example=vocab.get("example", ""),
-                    level=vocab.get("level", difficulty),
-                ))
+                vocabulary.append(
+                    VocabularyItem(
+                        word=vocab.get("word", ""),
+                        definition=vocab.get("definition", ""),
+                        example=vocab.get("example", ""),
+                        level=vocab.get("level", difficulty),
+                    )
+                )
 
             return ComprehensionMaterial(
                 material_id=result.get("material_id", str(uuid.uuid4())),
                 topic=result.get("topic", topic),
                 text=result.get("text", ""),
                 difficulty=result.get("difficulty", difficulty),
-                duration_seconds=int(result.get("duration_seconds", duration_minutes * 60)),
+                duration_seconds=int(
+                    result.get("duration_seconds", duration_minutes * 60)
+                ),
                 vocabulary=vocabulary,
                 key_points=result.get("key_points", []),
             )
@@ -130,17 +136,21 @@ class ComprehensionService:
                 system=system_prompt,
             )
 
-            questions_data = result if isinstance(result, list) else result.get("questions", [])
+            questions_data = (
+                result if isinstance(result, list) else result.get("questions", [])
+            )
 
             questions = []
             for item in questions_data:
-                questions.append(ComprehensionQuestion(
-                    question_id=item.get("question_id", str(uuid.uuid4())),
-                    question_text=item.get("question_text", ""),
-                    question_type=item.get("question_type", "multiple_choice"),
-                    options=item.get("options"),
-                    correct_answer=item.get("correct_answer", ""),
-                ))
+                questions.append(
+                    ComprehensionQuestion(
+                        question_id=item.get("question_id", str(uuid.uuid4())),
+                        question_text=item.get("question_text", ""),
+                        question_type=item.get("question_type", "multiple_choice"),
+                        options=item.get("options"),
+                        correct_answer=item.get("correct_answer", ""),
+                    )
+                )
 
             return questions
 
@@ -376,8 +386,14 @@ class ComprehensionService:
         """フォールバック: キーワードベースのサマリー評価"""
         # キーワードの存在チェック
         key_terms = [
-            "revenue", "increase", "customer", "satisfaction",
-            "response time", "turnover", "next quarter", "priorities",
+            "revenue",
+            "increase",
+            "customer",
+            "satisfaction",
+            "response time",
+            "turnover",
+            "next quarter",
+            "priorities",
         ]
 
         user_lower = user_summary.lower()

@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Boolean, DateTime, ForeignKey, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -31,9 +31,7 @@ class Subscription(Base):
     stripe_subscription_id: Mapped[str | None] = mapped_column(
         String(255), nullable=True, unique=True
     )
-    plan: Mapped[str] = mapped_column(
-        String(50), nullable=False, server_default="free"
-    )
+    plan: Mapped[str] = mapped_column(String(50), nullable=False, server_default="free")
     status: Mapped[str] = mapped_column(
         String(50), nullable=False, server_default="active"
     )
@@ -57,4 +55,6 @@ class Subscription(Base):
     user: Mapped["User"] = relationship("User", back_populates="subscription")
 
     def __repr__(self) -> str:
-        return f"<Subscription user={self.user_id} plan={self.plan} status={self.status}>"
+        return (
+            f"<Subscription user={self.user_id} plan={self.plan} status={self.status}>"
+        )

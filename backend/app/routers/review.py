@@ -1,7 +1,6 @@
 """復習(Review)ルーター - 間隔反復学習のスケジュール管理"""
 
-import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -9,14 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.user import User
 from app.models.review import ReviewItem
+from app.models.user import User
 from app.schemas.review import (
-    ReviewItemResponse,
     ReviewCompleteRequest,
     ReviewCompleteResponse,
+    ReviewItemResponse,
 )
-from app.services.spaced_repetition import fsrs, FSRSCard
+from app.services.spaced_repetition import FSRSCard, fsrs
 
 router = APIRouter()
 
@@ -33,7 +32,7 @@ async def get_due_items(
     next_review_atが現在時刻以前のアイテムと、
     まだ一度も復習されていないアイテムを返す。
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     result = await db.execute(
         select(ReviewItem)
@@ -93,7 +92,7 @@ async def complete_review(
     # 経過日数を計算
     elapsed_days = 0.0
     if item.last_reviewed_at is not None:
-        delta = datetime.now(timezone.utc) - item.last_reviewed_at
+        delta = datetime.now(UTC) - item.last_reviewed_at
         elapsed_days = max(0, delta.total_seconds() / 86400)
 
     # FSRSカードオブジェクトを構築

@@ -11,9 +11,13 @@ async def test_register(client: AsyncClient):
     """ユーザー登録が成功すること"""
     response = await client.post(
         "/api/auth/register",
-        json={"email": "test@example.com", "password": "testpass123", "name": "Test User"},
+        json={
+            "email": "test@example.com",
+            "password": "testpass123",
+            "name": "Test User",
+        },
     )
-    assert response.status_code == 200
+    assert response.status_code == 201
     data = response.json()
     assert "access_token" in data
     assert data["token_type"] == "bearer"
@@ -29,7 +33,7 @@ async def test_register_duplicate_email(client: AsyncClient):
         "/api/auth/register",
         json={"email": "dup@example.com", "password": "testpass456", "name": "User 2"},
     )
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 @pytest.mark.asyncio
@@ -38,7 +42,11 @@ async def test_login(client: AsyncClient):
     # まず登録
     await client.post(
         "/api/auth/register",
-        json={"email": "login@example.com", "password": "testpass123", "name": "Login User"},
+        json={
+            "email": "login@example.com",
+            "password": "testpass123",
+            "name": "Login User",
+        },
     )
 
     # ログイン
@@ -56,7 +64,11 @@ async def test_login_wrong_password(client: AsyncClient):
     """パスワード不一致でログインが失敗すること"""
     await client.post(
         "/api/auth/register",
-        json={"email": "wrong@example.com", "password": "testpass123", "name": "Wrong User"},
+        json={
+            "email": "wrong@example.com",
+            "password": "testpass123",
+            "name": "Wrong User",
+        },
     )
 
     response = await client.post(

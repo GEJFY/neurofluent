@@ -1,12 +1,11 @@
 """アナリティクス（Analytics）スキーマ - 学習分析・カリキュラム最適化"""
 
-from datetime import date, datetime
-from uuid import UUID
+from datetime import date
 
 from pydantic import BaseModel, Field
 
-
 # --- 日次詳細 ---
+
 
 class DailyBreakdown(BaseModel):
     """日次統計の詳細データ"""
@@ -22,6 +21,7 @@ class DailyBreakdown(BaseModel):
 
 # --- 週次レポート ---
 
+
 class WeeklyReport(BaseModel):
     """週次学習レポート - 7日間の集計・前週比較"""
 
@@ -34,16 +34,19 @@ class WeeklyReport(BaseModel):
     avg_grammar_accuracy: float | None = Field(default=None, description="平均文法精度")
     avg_pronunciation: float | None = Field(default=None, description="平均発音スコア")
     streak_days: int = Field(default=0, description="連続学習日数")
-    daily_breakdown: list[DailyBreakdown] = Field(default_factory=list, description="日別詳細データ")
+    daily_breakdown: list[DailyBreakdown] = Field(
+        default_factory=list, description="日別詳細データ"
+    )
     improvement_vs_last_week: dict = Field(
         default_factory=dict,
-        description="前週比改善率 (例: {'minutes': 15.2, 'accuracy': 3.5})"
+        description="前週比改善率 (例: {'minutes': 15.2, 'accuracy': 3.5})",
     )
 
     model_config = {"from_attributes": True}
 
 
 # --- 月次レポート ---
+
 
 class Achievement(BaseModel):
     """学習実績アチーブメント"""
@@ -68,24 +71,26 @@ class MonthlyReport(BaseModel):
     streak_best: int = Field(default=0, description="月内最長ストリーク")
     monthly_trend_chart_data: list[dict] = Field(
         default_factory=list,
-        description="月次トレンドチャートデータ [{'week': 1, 'minutes': 120, ...}]"
+        description="月次トレンドチャートデータ [{'week': 1, 'minutes': 120, ...}]",
     )
     skill_radar_data: dict = Field(
         default_factory=dict,
-        description="スキルレーダーチャートデータ {'speaking': 0.7, 'listening': 0.6, ...}"
+        description="スキルレーダーチャートデータ {'speaking': 0.7, 'listening': 0.6, ...}",
     )
     top_achievements: list[Achievement] = Field(
-        default_factory=list,
-        description="月間トップアチーブメント"
+        default_factory=list, description="月間トップアチーブメント"
     )
     strengths: list[str] = Field(default_factory=list, description="強み分野")
     weaknesses: list[str] = Field(default_factory=list, description="弱み分野")
-    recommendations: list[str] = Field(default_factory=list, description="推奨アクション")
+    recommendations: list[str] = Field(
+        default_factory=list, description="推奨アクション"
+    )
 
     model_config = {"from_attributes": True}
 
 
 # --- スキルブレイクダウン ---
+
 
 class SpeakingResponseTime(BaseModel):
     """スピーキング応答速度"""
@@ -125,7 +130,9 @@ class SpeakingSkill(BaseModel):
     response_time: SpeakingResponseTime = Field(default_factory=SpeakingResponseTime)
     filler_words: SpeakingFillerWords = Field(default_factory=SpeakingFillerWords)
     grammar: SpeakingGrammar = Field(default_factory=SpeakingGrammar)
-    expression_level: SpeakingExpressionLevel = Field(default_factory=SpeakingExpressionLevel)
+    expression_level: SpeakingExpressionLevel = Field(
+        default_factory=SpeakingExpressionLevel
+    )
 
 
 class ListeningComprehensionBySpeed(BaseModel):
@@ -193,7 +200,9 @@ class VocabularySkill(BaseModel):
     """語彙スキル詳細"""
 
     range: VocabularyRange = Field(default_factory=VocabularyRange)
-    sophistication: VocabularySophistication = Field(default_factory=VocabularySophistication)
+    sophistication: VocabularySophistication = Field(
+        default_factory=VocabularySophistication
+    )
     new_per_week: VocabularyNewPerWeek = Field(default_factory=VocabularyNewPerWeek)
 
 
@@ -209,6 +218,7 @@ class SkillBreakdown(BaseModel):
 
 # --- 発音進捗 ---
 
+
 class PhonemeTrend(BaseModel):
     """音素別トレンドポイント"""
 
@@ -219,25 +229,26 @@ class PhonemeTrend(BaseModel):
 class PronunciationProgress(BaseModel):
     """発音進捗データ"""
 
-    overall_trend: list[PhonemeTrend] = Field(default_factory=list, description="全体トレンド")
+    overall_trend: list[PhonemeTrend] = Field(
+        default_factory=list, description="全体トレンド"
+    )
     phoneme_scores: dict = Field(
-        default_factory=dict,
-        description="音素別スコア {'θ': 0.65, 'r': 0.72, ...}"
+        default_factory=dict, description="音素別スコア {'θ': 0.65, 'r': 0.72, ...}"
     )
-    weak_phonemes: list[str] = Field(
-        default_factory=list,
-        description="弱点音素リスト"
-    )
+    weak_phonemes: list[str] = Field(default_factory=list, description="弱点音素リスト")
 
     model_config = {"from_attributes": True}
 
 
 # --- 推奨事項 ---
 
+
 class Recommendation(BaseModel):
     """AI生成の学習推奨事項"""
 
-    category: str = Field(description="カテゴリ: speaking, listening, vocabulary, grammar")
+    category: str = Field(
+        description="カテゴリ: speaking, listening, vocabulary, grammar"
+    )
     title: str = Field(description="推奨タイトル")
     description: str = Field(description="推奨詳細")
     priority: int = Field(default=1, ge=1, le=5, description="優先度（1=最高, 5=最低）")
@@ -245,6 +256,7 @@ class Recommendation(BaseModel):
 
 
 # --- カリキュラム ---
+
 
 class ActivityItem(BaseModel):
     """推奨アクティビティ"""
@@ -254,7 +266,9 @@ class ActivityItem(BaseModel):
     description: str = Field(description="説明")
     estimated_minutes: int = Field(description="推定所要時間（分）")
     priority: int = Field(default=1, ge=1, le=5)
-    params: dict = Field(default_factory=dict, description="アクティビティ固有パラメータ")
+    params: dict = Field(
+        default_factory=dict, description="アクティビティ固有パラメータ"
+    )
 
 
 class DailyMenu(BaseModel):
@@ -262,8 +276,7 @@ class DailyMenu(BaseModel):
 
     time_of_day: str = Field(description="時間帯: morning, afternoon, evening, night")
     recommended_activities: list[ActivityItem] = Field(
-        default_factory=list,
-        description="推奨アクティビティリスト"
+        default_factory=list, description="推奨アクティビティリスト"
     )
     focus_message: str = Field(description="本日のフォーカスメッセージ")
     estimated_minutes: int = Field(description="推定合計時間（分）")
@@ -278,6 +291,8 @@ class FocusArea(BaseModel):
     current_level: float = Field(description="現在のレベル（0.0-1.0）")
     target_level: float = Field(description="目標レベル（0.0-1.0）")
     priority: int = Field(default=1, ge=1, le=5, description="優先度")
-    suggested_exercises: list[str] = Field(default_factory=list, description="推奨エクササイズ")
+    suggested_exercises: list[str] = Field(
+        default_factory=list, description="推奨エクササイズ"
+    )
 
     model_config = {"from_attributes": True}

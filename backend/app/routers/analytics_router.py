@@ -12,13 +12,13 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.analytics import (
-    WeeklyReport,
-    MonthlyReport,
-    SkillBreakdown,
-    PronunciationProgress,
-    Recommendation,
     DailyMenu,
     FocusArea,
+    MonthlyReport,
+    PronunciationProgress,
+    Recommendation,
+    SkillBreakdown,
+    WeeklyReport,
 )
 from app.services.analytics_service import analytics_service
 from app.services.curriculum_service import curriculum_service

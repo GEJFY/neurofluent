@@ -24,7 +24,9 @@ class ReviewCompleteRequest(BaseModel):
     """復習完了リクエスト - FSRSレーティング"""
 
     item_id: uuid.UUID
-    rating: int = Field(ge=1, le=4, description="評価（1=Again, 2=Hard, 3=Good, 4=Easy）")
+    rating: int = Field(
+        ge=1, le=4, description="評価（1=Again, 2=Hard, 3=Good, 4=Easy）"
+    )
 
 
 class ReviewCompleteResponse(BaseModel):

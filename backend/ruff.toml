@@ -1,0 +1,15 @@
+# Ruff 設定 - FluentEdge Backend
+[lint]
+# FastAPI Depends() パターンはデフォルト引数での呼び出しが正常
+# SQLAlchemy の文字列参照による前方参照は F821 の誤検出
+ignore = [
+    "B008",   # Depends() in default arguments (FastAPI pattern)
+    "F821",   # Forward references in string form (SQLAlchemy Mapped)
+    "B904",   # raise ... from err (既存コードの修正は別PR)
+    "B007",   # Loop variable not used (既存コードの修正は別PR)
+    "F841",   # Unused variable (既存コードの修正は別PR)
+    "SIM102", # Nested if (既存コードの修正は別PR)
+]
+
+[lint.isort]
+known-first-party = ["app"]

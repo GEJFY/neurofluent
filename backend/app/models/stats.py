@@ -1,10 +1,10 @@
 """学習統計モデル - 日次パフォーマンスデータの蓄積"""
 
 import uuid
-from datetime import date, datetime
+from datetime import date
 
-from sqlalchemy import String, Integer, Float, Date, DateTime, ForeignKey, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Date, Float, ForeignKey, Integer, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -28,7 +28,9 @@ class DailyStat(Base):
     practice_minutes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     sessions_completed: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     reviews_completed: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    new_expressions_learned: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    new_expressions_learned: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False
+    )
     grammar_accuracy: Mapped[float | None] = mapped_column(Float, nullable=True)
     avg_response_time_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     listening_speed_max: Mapped[float | None] = mapped_column(Float, nullable=True)

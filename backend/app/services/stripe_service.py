@@ -9,7 +9,7 @@ import hmac
 import json
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 import httpx
@@ -21,10 +21,10 @@ from app.models.subscription import Subscription
 from app.models.user import User
 from app.schemas.subscription import (
     CheckoutSessionResponse,
-    SubscriptionInfo,
-    PlanInfo,
     PlanFeature,
+    PlanInfo,
     PlanLimits,
+    SubscriptionInfo,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,14 +40,46 @@ PLANS: dict = {
         "price_monthly": 0.0,
         "price_yearly": 0.0,
         "features": [
-            {"name": "Basic Conversation", "description": "AI英会話 基本機能", "included": True},
-            {"name": "Flash Translation", "description": "瞬間英作文（1日5問）", "included": True},
-            {"name": "Spaced Repetition", "description": "間隔反復学習", "included": True},
-            {"name": "Basic Analytics", "description": "基本的な学習統計", "included": True},
-            {"name": "Advanced Analytics", "description": "詳細な学習分析", "included": False},
-            {"name": "AI Curriculum", "description": "AIカリキュラム最適化", "included": False},
-            {"name": "Pronunciation Training", "description": "発音トレーニング", "included": False},
-            {"name": "Priority Support", "description": "優先サポート", "included": False},
+            {
+                "name": "Basic Conversation",
+                "description": "AI英会話 基本機能",
+                "included": True,
+            },
+            {
+                "name": "Flash Translation",
+                "description": "瞬間英作文（1日5問）",
+                "included": True,
+            },
+            {
+                "name": "Spaced Repetition",
+                "description": "間隔反復学習",
+                "included": True,
+            },
+            {
+                "name": "Basic Analytics",
+                "description": "基本的な学習統計",
+                "included": True,
+            },
+            {
+                "name": "Advanced Analytics",
+                "description": "詳細な学習分析",
+                "included": False,
+            },
+            {
+                "name": "AI Curriculum",
+                "description": "AIカリキュラム最適化",
+                "included": False,
+            },
+            {
+                "name": "Pronunciation Training",
+                "description": "発音トレーニング",
+                "included": False,
+            },
+            {
+                "name": "Priority Support",
+                "description": "優先サポート",
+                "included": False,
+            },
         ],
         "limits": {
             "daily_sessions": 3,
@@ -67,15 +99,51 @@ PLANS: dict = {
         "price_monthly": 9.99,
         "price_yearly": 99.99,
         "features": [
-            {"name": "Basic Conversation", "description": "AI英会話 基本機能", "included": True},
-            {"name": "Flash Translation", "description": "瞬間英作文（無制限）", "included": True},
-            {"name": "Spaced Repetition", "description": "間隔反復学習", "included": True},
-            {"name": "Basic Analytics", "description": "基本的な学習統計", "included": True},
-            {"name": "Advanced Analytics", "description": "詳細な学習分析", "included": True},
-            {"name": "Mogomogo English", "description": "もごもごイングリッシュ", "included": True},
-            {"name": "AI Curriculum", "description": "AIカリキュラム最適化", "included": False},
-            {"name": "Pronunciation Training", "description": "発音トレーニング", "included": False},
-            {"name": "Priority Support", "description": "優先サポート", "included": False},
+            {
+                "name": "Basic Conversation",
+                "description": "AI英会話 基本機能",
+                "included": True,
+            },
+            {
+                "name": "Flash Translation",
+                "description": "瞬間英作文（無制限）",
+                "included": True,
+            },
+            {
+                "name": "Spaced Repetition",
+                "description": "間隔反復学習",
+                "included": True,
+            },
+            {
+                "name": "Basic Analytics",
+                "description": "基本的な学習統計",
+                "included": True,
+            },
+            {
+                "name": "Advanced Analytics",
+                "description": "詳細な学習分析",
+                "included": True,
+            },
+            {
+                "name": "Mogomogo English",
+                "description": "もごもごイングリッシュ",
+                "included": True,
+            },
+            {
+                "name": "AI Curriculum",
+                "description": "AIカリキュラム最適化",
+                "included": False,
+            },
+            {
+                "name": "Pronunciation Training",
+                "description": "発音トレーニング",
+                "included": False,
+            },
+            {
+                "name": "Priority Support",
+                "description": "優先サポート",
+                "included": False,
+            },
         ],
         "limits": {
             "daily_sessions": 10,
@@ -95,16 +163,56 @@ PLANS: dict = {
         "price_monthly": 19.99,
         "price_yearly": 199.99,
         "features": [
-            {"name": "Basic Conversation", "description": "AI英会話 全機能", "included": True},
-            {"name": "Flash Translation", "description": "瞬間英作文（無制限）", "included": True},
-            {"name": "Spaced Repetition", "description": "間隔反復学習", "included": True},
-            {"name": "Basic Analytics", "description": "基本的な学習統計", "included": True},
-            {"name": "Advanced Analytics", "description": "詳細な学習分析", "included": True},
-            {"name": "Mogomogo English", "description": "もごもごイングリッシュ", "included": True},
-            {"name": "AI Curriculum", "description": "AIカリキュラム最適化", "included": True},
-            {"name": "Pronunciation Training", "description": "発音トレーニング（無制限）", "included": True},
-            {"name": "Comprehension", "description": "リスニングコンプリヘンション", "included": True},
-            {"name": "Priority Support", "description": "優先サポート", "included": True},
+            {
+                "name": "Basic Conversation",
+                "description": "AI英会話 全機能",
+                "included": True,
+            },
+            {
+                "name": "Flash Translation",
+                "description": "瞬間英作文（無制限）",
+                "included": True,
+            },
+            {
+                "name": "Spaced Repetition",
+                "description": "間隔反復学習",
+                "included": True,
+            },
+            {
+                "name": "Basic Analytics",
+                "description": "基本的な学習統計",
+                "included": True,
+            },
+            {
+                "name": "Advanced Analytics",
+                "description": "詳細な学習分析",
+                "included": True,
+            },
+            {
+                "name": "Mogomogo English",
+                "description": "もごもごイングリッシュ",
+                "included": True,
+            },
+            {
+                "name": "AI Curriculum",
+                "description": "AIカリキュラム最適化",
+                "included": True,
+            },
+            {
+                "name": "Pronunciation Training",
+                "description": "発音トレーニング（無制限）",
+                "included": True,
+            },
+            {
+                "name": "Comprehension",
+                "description": "リスニングコンプリヘンション",
+                "included": True,
+            },
+            {
+                "name": "Priority Support",
+                "description": "優先サポート",
+                "included": True,
+            },
         ],
         "limits": {
             "daily_sessions": -1,
@@ -124,11 +232,27 @@ PLANS: dict = {
         "price_monthly": 0.0,
         "price_yearly": 0.0,
         "features": [
-            {"name": "All Features", "description": "全機能（カスタム設定）", "included": True},
-            {"name": "Team Management", "description": "チーム管理機能", "included": True},
-            {"name": "Custom Reports", "description": "カスタムレポート", "included": True},
+            {
+                "name": "All Features",
+                "description": "全機能（カスタム設定）",
+                "included": True,
+            },
+            {
+                "name": "Team Management",
+                "description": "チーム管理機能",
+                "included": True,
+            },
+            {
+                "name": "Custom Reports",
+                "description": "カスタムレポート",
+                "included": True,
+            },
             {"name": "API Access", "description": "API連携", "included": True},
-            {"name": "Dedicated Support", "description": "専任サポート", "included": True},
+            {
+                "name": "Dedicated Support",
+                "description": "専任サポート",
+                "included": True,
+            },
             {"name": "SLA", "description": "SLA保証", "included": True},
         ],
         "limits": {
@@ -346,7 +470,10 @@ class StripeService:
                     )
 
                     if response.status_code != 200:
-                        logger.error("Stripeサブスクリプションキャンセルエラー: %s", response.text)
+                        logger.error(
+                            "Stripeサブスクリプションキャンセルエラー: %s",
+                            response.text,
+                        )
                         return False
 
             except httpx.HTTPError as e:
@@ -385,22 +512,28 @@ class StripeService:
                 daily_sessions=limits_data["daily_sessions"],
                 monthly_api_calls=limits_data["monthly_api_calls"],
                 flash_exercises_per_day=limits_data["flash_exercises_per_day"],
-                conversation_minutes_per_day=limits_data["conversation_minutes_per_day"],
-                pronunciation_evaluations_per_day=limits_data["pronunciation_evaluations_per_day"],
+                conversation_minutes_per_day=limits_data[
+                    "conversation_minutes_per_day"
+                ],
+                pronunciation_evaluations_per_day=limits_data[
+                    "pronunciation_evaluations_per_day"
+                ],
                 advanced_analytics=limits_data["advanced_analytics"],
                 ai_curriculum=limits_data["ai_curriculum"],
                 priority_support=limits_data["priority_support"],
             )
 
-            plan_list.append(PlanInfo(
-                id=plan_id,
-                name=data["name"],
-                price_monthly=data["price_monthly"],
-                price_yearly=data["price_yearly"],
-                features=features,
-                limits=limits,
-                is_current=(plan_id == current_plan),
-            ))
+            plan_list.append(
+                PlanInfo(
+                    id=plan_id,
+                    name=data["name"],
+                    price_monthly=data["price_monthly"],
+                    price_yearly=data["price_yearly"],
+                    features=features,
+                    limits=limits,
+                    is_current=(plan_id == current_plan),
+                )
+            )
 
         return plan_list
 
@@ -444,7 +577,9 @@ class StripeService:
 
     async def _handle_checkout_completed(self, data: dict, db: AsyncSession) -> None:
         """チェックアウト完了イベント処理"""
-        user_id_str = data.get("metadata", {}).get("user_id") or data.get("client_reference_id")
+        user_id_str = data.get("metadata", {}).get("user_id") or data.get(
+            "client_reference_id"
+        )
         if not user_id_str:
             logger.warning("チェックアウト完了: user_idが見つかりません")
             return
@@ -465,7 +600,7 @@ class StripeService:
         )
         sub = result.scalar_one_or_none()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if sub is None:
             sub = Subscription(
@@ -488,9 +623,7 @@ class StripeService:
             sub.cancel_at_period_end = False
 
         # ユーザーのサブスクリプションプランも更新
-        user_result = await db.execute(
-            select(User).where(User.id == user_id)
-        )
+        user_result = await db.execute(select(User).where(User.id == user_id))
         user = user_result.scalar_one_or_none()
         if user:
             user.subscription_plan = plan
@@ -516,16 +649,19 @@ class StripeService:
         sub = result.scalar_one_or_none()
 
         if sub is None:
-            logger.warning("サブスクリプション更新: 該当レコードなし subscription_id=%s", subscription_id)
+            logger.warning(
+                "サブスクリプション更新: 該当レコードなし subscription_id=%s",
+                subscription_id,
+            )
             return
 
         sub.status = status
         sub.cancel_at_period_end = cancel_at_period_end
 
         if period_start:
-            sub.current_period_start = datetime.fromtimestamp(period_start, tz=timezone.utc)
+            sub.current_period_start = datetime.fromtimestamp(period_start, tz=UTC)
         if period_end:
-            sub.current_period_end = datetime.fromtimestamp(period_end, tz=timezone.utc)
+            sub.current_period_end = datetime.fromtimestamp(period_end, tz=UTC)
 
         await db.commit()
         logger.info("サブスクリプション更新: user=%s status=%s", sub.user_id, status)
@@ -542,16 +678,17 @@ class StripeService:
         sub = result.scalar_one_or_none()
 
         if sub is None:
-            logger.warning("サブスクリプション削除: 該当レコードなし subscription_id=%s", subscription_id)
+            logger.warning(
+                "サブスクリプション削除: 該当レコードなし subscription_id=%s",
+                subscription_id,
+            )
             return
 
         sub.status = "canceled"
         sub.cancel_at_period_end = False
 
         # ユーザーのプランをfreeに戻す
-        user_result = await db.execute(
-            select(User).where(User.id == sub.user_id)
-        )
+        user_result = await db.execute(select(User).where(User.id == sub.user_id))
         user = user_result.scalar_one_or_none()
         if user:
             user.subscription_plan = "free"

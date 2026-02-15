@@ -8,9 +8,10 @@ Create Date: 2026-02-14
 review_items, daily_stats, api_usage_log
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 # revision identifiers
 revision = "001_initial"
@@ -31,11 +32,19 @@ def upgrade() -> None:
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("hashed_password", sa.String(512), nullable=False),
         sa.Column("entra_id", sa.String(255), unique=True, nullable=True),
-        sa.Column("native_language", sa.String(10), nullable=False, server_default="ja"),
+        sa.Column(
+            "native_language", sa.String(10), nullable=False, server_default="ja"
+        ),
         sa.Column("target_level", sa.String(10), nullable=False, server_default="C1"),
-        sa.Column("daily_goal_minutes", sa.Integer(), nullable=False, server_default="15"),
-        sa.Column("subscription_plan", sa.String(50), nullable=False, server_default="free"),
-        sa.Column("api_usage_monthly", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column(
+            "daily_goal_minutes", sa.Integer(), nullable=False, server_default="15"
+        ),
+        sa.Column(
+            "subscription_plan", sa.String(50), nullable=False, server_default="free"
+        ),
+        sa.Column(
+            "api_usage_monthly", sa.Integer(), nullable=False, server_default="0"
+        ),
         sa.Column("api_usage_reset_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column(
             "created_at",

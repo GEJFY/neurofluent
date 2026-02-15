@@ -136,11 +136,11 @@ Create realistic, natural-sounding business English content for listening compre
 
 ## Parameters
 - Topic: {topic}
-- Difficulty: {difficulty} (CEFR {guide['cefr']})
-- Target word count: approximately {guide['word_count']} words
-- Speaking pace: {guide['speed']}
-- Vocabulary level: {guide['vocabulary']}
-- Grammar complexity: {guide['grammar']}
+- Difficulty: {difficulty} (CEFR {guide["cefr"]})
+- Target word count: approximately {guide["word_count"]} words
+- Speaking pace: {guide["speed"]}
+- Vocabulary level: {guide["vocabulary"]}
+- Grammar complexity: {guide["grammar"]}
 
 ## Content Design Rules
 
@@ -174,7 +174,7 @@ Return ONLY a JSON object:
             "word": "key term",
             "definition": "clear definition",
             "example": "example usage from the text",
-            "level": "{guide['cefr']}"
+            "level": "{guide["cefr"]}"
         }}
     ],
     "key_points": [

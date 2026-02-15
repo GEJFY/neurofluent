@@ -4,15 +4,16 @@ Stripe APIを使用したサブスクリプション決済の管理。
 チェックアウトセッション作成、Webhook処理、サブスクリプション情報取得・キャンセルを行う。
 """
 
+import asyncio
 import hashlib
 import hmac
 import json
-import logging
 import time
 from datetime import UTC, datetime
 from uuid import UUID
 
 import httpx
+import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,7 +28,7 @@ from app.schemas.subscription import (
     SubscriptionInfo,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 # --- プラン定義 ---
@@ -270,7 +271,10 @@ PLANS: dict = {
 
 
 class StripeService:
-    """Stripe決済サービス - httpxベースの実装"""
+    """Stripe決済サービス - httpxベースの実装（Idempotency・Retry対応）"""
+
+    MAX_RETRIES = 3
+    RETRY_BASE_DELAY = 0.5
 
     def __init__(self):
         self.api_base = "https://api.stripe.com/v1"
@@ -278,12 +282,82 @@ class StripeService:
         self.webhook_secret = getattr(settings, "stripe_webhook_secret", "")
         self.timeout = httpx.Timeout(30.0, connect=10.0)
 
-    def _build_headers(self) -> dict:
+    def _build_headers(self, idempotency_key: str | None = None) -> dict:
         """Stripe API用ヘッダーを構築"""
-        return {
+        headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/x-www-form-urlencoded",
         }
+        if idempotency_key:
+            headers["Idempotency-Key"] = idempotency_key
+        return headers
+
+    async def _request_with_retry(
+        self,
+        method: str,
+        url: str,
+        idempotency_key: str | None = None,
+        **kwargs,
+    ) -> httpx.Response:
+        """指数バックオフによるリトライ付きHTTPリクエスト"""
+        headers = self._build_headers(idempotency_key)
+        last_exception = None
+
+        for attempt in range(self.MAX_RETRIES):
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    response = await client.request(
+                        method, url, headers=headers, **kwargs
+                    )
+                    # 429 or 5xx はリトライ対象
+                    if response.status_code in (429, 500, 502, 503, 504):
+                        if attempt < self.MAX_RETRIES - 1:
+                            delay = self.RETRY_BASE_DELAY * (2**attempt)
+                            logger.warning(
+                                "stripe_retry",
+                                attempt=attempt + 1,
+                                status=response.status_code,
+                                delay=delay,
+                            )
+                            await asyncio.sleep(delay)
+                            continue
+                    return response
+            except httpx.HTTPError as e:
+                last_exception = e
+                if attempt < self.MAX_RETRIES - 1:
+                    delay = self.RETRY_BASE_DELAY * (2**attempt)
+                    logger.warning(
+                        "stripe_retry_error",
+                        attempt=attempt + 1,
+                        error=str(e),
+                        delay=delay,
+                    )
+                    await asyncio.sleep(delay)
+
+        if last_exception:
+            raise last_exception
+        return response  # type: ignore[possibly-undefined]
+
+    @staticmethod
+    def _generate_idempotency_key(user_id: UUID, plan: str, billing_cycle: str) -> str:
+        """Checkout用のIdempotency Keyを生成（1時間単位で重複防止）"""
+        hour_bucket = int(time.time() // 3600)
+        raw = f"{user_id}:{plan}:{billing_cycle}:{hour_bucket}"
+        return hashlib.sha256(raw.encode()).hexdigest()[:32]
+
+    async def _is_webhook_duplicate(self, event_id: str) -> bool:
+        """Redis でWebhookイベントの重複チェック（TTL 24h）"""
+        try:
+            from app.redis_client import get_redis
+
+            redis_client = get_redis()
+            if redis_client is None:
+                return False
+            key = f"stripe:webhook:{event_id}"
+            result = await redis_client.set(key, "1", ex=86400, nx=True)
+            return result is None  # None = 既に存在 = 重複
+        except Exception:
+            return False
 
     async def create_checkout_session(
         self,
@@ -329,27 +403,29 @@ class StripeService:
             "metadata[plan]": plan,
         }
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(
-                f"{self.api_base}/checkout/sessions",
-                headers=self._build_headers(),
-                data=form_data,
+        idempotency_key = self._generate_idempotency_key(user_id, plan, billing_cycle)
+
+        response = await self._request_with_retry(
+            "POST",
+            f"{self.api_base}/checkout/sessions",
+            idempotency_key=idempotency_key,
+            data=form_data,
+        )
+
+        if response.status_code != 200:
+            logger.error("stripe_checkout_error", status=response.status_code)
+            raise httpx.HTTPStatusError(
+                f"Stripe API returned {response.status_code}",
+                request=response.request,
+                response=response,
             )
 
-            if response.status_code != 200:
-                logger.error("Stripeチェックアウト作成エラー: %s", response.text)
-                raise httpx.HTTPStatusError(
-                    f"Stripe API returned {response.status_code}",
-                    request=response.request,
-                    response=response,
-                )
+        session_data = response.json()
 
-            session_data = response.json()
-
-            return CheckoutSessionResponse(
-                checkout_url=session_data.get("url", ""),
-                session_id=session_data.get("id", ""),
-            )
+        return CheckoutSessionResponse(
+            checkout_url=session_data.get("url", ""),
+            session_id=session_data.get("id", ""),
+        )
 
     async def handle_webhook(
         self,
@@ -378,10 +454,18 @@ class StripeService:
             self._verify_webhook_signature(payload, signature)
 
         event = json.loads(payload)
+        event_id = event.get("id", "")
         event_type = event.get("type", "")
         event_data = event.get("data", {}).get("object", {})
 
-        logger.info("Stripe Webhookイベント受信: %s", event_type)
+        # Webhook重複排除
+        if event_id and await self._is_webhook_duplicate(event_id):
+            logger.info(
+                "stripe_webhook_duplicate", event_id=event_id, event_type=event_type
+            )
+            return {"event_type": event_type, "status": "duplicate"}
+
+        logger.info("stripe_webhook_received", event_id=event_id, event_type=event_type)
 
         if event_type == "checkout.session.completed":
             await self._handle_checkout_completed(event_data, db)
@@ -462,22 +546,16 @@ class StripeService:
         # Stripe APIでサブスクリプションをキャンセル
         if sub.stripe_subscription_id and self.api_key:
             try:
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
-                    response = await client.post(
-                        f"{self.api_base}/subscriptions/{sub.stripe_subscription_id}",
-                        headers=self._build_headers(),
-                        data={"cancel_at_period_end": "true"},
-                    )
-
-                    if response.status_code != 200:
-                        logger.error(
-                            "Stripeサブスクリプションキャンセルエラー: %s",
-                            response.text,
-                        )
-                        return False
-
+                response = await self._request_with_retry(
+                    "POST",
+                    f"{self.api_base}/subscriptions/{sub.stripe_subscription_id}",
+                    data={"cancel_at_period_end": "true"},
+                )
+                if response.status_code != 200:
+                    logger.error("stripe_cancel_error", status=response.status_code)
+                    return False
             except httpx.HTTPError as e:
-                logger.error("Stripe API通信エラー: %s", e)
+                logger.error("stripe_cancel_network_error", error=str(e))
                 return False
 
         # ローカルDB更新
@@ -559,10 +637,11 @@ class StripeService:
         # タイムスタンプの鮮度チェック（5分以内）
         try:
             ts = int(timestamp)
-            if abs(time.time() - ts) > 300:
-                raise ValueError("Webhook署名のタイムスタンプが古すぎます")
         except (ValueError, TypeError):
             raise ValueError("無効なWebhookタイムスタンプです")
+
+        if abs(time.time() - ts) > 300:
+            raise ValueError("Webhook署名のタイムスタンプが古すぎます")
 
         # HMAC-SHA256署名検証
         signed_payload = f"{timestamp}.".encode() + payload

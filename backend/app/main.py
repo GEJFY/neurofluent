@@ -8,6 +8,10 @@ from app.database import engine
 from app.logging_config import setup_logging
 from app.middleware.error_handler import register_error_handlers
 from app.middleware.logging_middleware import RequestLoggingMiddleware
+from app.middleware.rate_limiter import RateLimitMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.redis_client import close_redis, init_redis
+from app.monitoring import init_monitoring
 from app.routers import (
     analytics,
     analytics_router,
@@ -32,7 +36,10 @@ from app.routers import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
+    init_monitoring()
+    await init_redis()
     yield
+    await close_redis()
     await engine.dispose()
 
 
@@ -45,11 +52,13 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.backend_cors_origins.split(","),
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID", "Accept"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(RequestLoggingMiddleware)
 
 register_error_handlers(app)

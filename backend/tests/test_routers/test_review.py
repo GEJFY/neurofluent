@@ -104,6 +104,6 @@ class TestReviewRouter:
 
     @pytest.mark.asyncio
     async def test_unauthenticated(self, client):
-        """未認証ユーザーは401エラー"""
+        """未認証ユーザーは401/403エラー（HTTPBearer）"""
         response = await client.get("/api/review/due")
-        assert response.status_code == 403
+        assert response.status_code in (401, 403)

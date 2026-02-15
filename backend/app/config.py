@@ -7,6 +7,23 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     backend_cors_origins: str = "http://localhost:3000"
 
+    # Rate Limiting (API global)
+    rate_limit_authenticated: int = 100
+    rate_limit_unauthenticated: int = 30
+
+    # Monitoring (Azure Application Insights)
+    appinsights_connection_string: str = ""
+    app_version: str = "1.0.0"
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """CORS origins をリストで返す"""
+        return [
+            origin.strip()
+            for origin in self.backend_cors_origins.split(",")
+            if origin.strip()
+        ]
+
     # Database
     database_url: str = (
         "postgresql+asyncpg://fluentedge:fluentedge@localhost:5432/fluentedge"
@@ -24,11 +41,13 @@ class Settings(BaseSettings):
     azure_openai_realtime_deployment: str = "gpt-realtime"
     azure_openai_tts_deployment: str = "gpt-4o-mini-tts"
 
-    # Claude (Azure AI Foundry)
+    # Azure AI Foundry (GPT-5 via Azure OpenAI)
     azure_ai_foundry_endpoint: str = ""
     azure_ai_foundry_api_key: str = ""
-    claude_sonnet_model: str = "claude-sonnet-4-5-20250929"
-    claude_haiku_model: str = "claude-haiku-4-5-20251001"
+    azure_openai_api_version: str = "2024-10-21"
+    gpt5_smart_model: str = "gpt-5-mini"
+    gpt5_fast_model: str = "gpt-5-nano"
+    gpt5_powerful_model: str = "gpt-5"
 
     # Azure Speech
     azure_speech_key: str = ""
@@ -58,12 +77,14 @@ class Settings(BaseSettings):
     aws_secret_access_key: str = ""
     aws_bedrock_model_sonnet: str = "anthropic.claude-sonnet-4-5-20250929-v1:0"
     aws_bedrock_model_haiku: str = "anthropic.claude-haiku-4-5-20251001-v1:0"
+    aws_bedrock_model_opus: str = "anthropic.claude-opus-4-6-v1:0"
 
     # GCP Vertex AI
     gcp_project_id: str = ""
     gcp_region: str = "us-central1"
     gcp_vertex_model_sonnet: str = "claude-sonnet-4-5-20250929"
     gcp_vertex_model_haiku: str = "claude-haiku-4-5-20251001"
+    gcp_vertex_model_opus: str = "claude-opus-4-6"
 
     # Local / OpenAI-compatible
     local_llm_base_url: str = "http://localhost:11434/v1"

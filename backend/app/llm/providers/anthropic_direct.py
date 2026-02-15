@@ -14,10 +14,11 @@ from app.llm.base import LLMProvider
 
 logger = logging.getLogger(__name__)
 
-# Anthropic直接APIのモデルマッピング
+# Anthropic直接APIのモデルマッピング（Anthropic公式モデルID）
 MODEL_MAP = {
-    "sonnet": settings.claude_sonnet_model,
-    "haiku": settings.claude_haiku_model,
+    "opus": "claude-opus-4-6",
+    "sonnet": "claude-sonnet-4-5-20250929",
+    "haiku": "claude-haiku-4-5-20251001",
 }
 
 # Anthropic API のベースURL

@@ -1,4 +1,4 @@
-"""LLMプロバイダーのテスト - Azure Foundry, Anthropic Direct, OpenAI互換"""
+"""LLMプロバイダーのテスト - Azure Foundry (GPT-5), Anthropic Direct, OpenAI互換"""
 
 import json
 from unittest.mock import patch
@@ -56,109 +56,226 @@ def _openai_response(
 
 
 # ============================================================
-# Azure Foundry Provider テスト
+# Azure Foundry Provider テスト (GPT-5 via OpenAI API)
 # ============================================================
 class TestAzureFoundryProvider:
-    """Azure AI Foundry プロバイダーのテスト"""
+    """Azure AI Foundry プロバイダーのテスト（OpenAI Chat Completions API形式）"""
+
+    MOCK_ENDPOINT = "https://test-openai.openai.azure.com"
+    MOCK_API_KEY = "test-api-key"
+    MOCK_API_VERSION = "2024-10-21"
+
+    def _patch_settings(self):
+        """Azure Foundry用の設定をモック"""
+        return patch(
+            "app.llm.providers.azure_foundry.settings",
+            **{
+                "azure_ai_foundry_endpoint": self.MOCK_ENDPOINT,
+                "azure_ai_foundry_api_key": self.MOCK_API_KEY,
+                "azure_openai_api_version": self.MOCK_API_VERSION,
+                "gpt5_fast_model": "gpt-5-nano",
+                "gpt5_smart_model": "gpt-5-mini",
+                "gpt5_powerful_model": "gpt-5",
+            },
+        )
+
+    def _mock_url(self, deployment: str) -> str:
+        """モック対象のURLを生成"""
+        return (
+            f"{self.MOCK_ENDPOINT}/openai/deployments/{deployment}"
+            f"/chat/completions?api-version={self.MOCK_API_VERSION}"
+        )
 
     @pytest.mark.asyncio
     @respx.mock
     async def test_azure_foundry_chat_success(self):
         """正常なchat呼び出しがテキスト応答を返す"""
-        with patch("app.llm.providers.azure_foundry.settings") as mock_settings:
-            mock_settings.azure_ai_foundry_endpoint = "https://test.azure.com"
-            mock_settings.azure_ai_foundry_api_key = "test-key"
-            mock_settings.claude_sonnet_model = "claude-sonnet-test"
-            mock_settings.claude_haiku_model = "claude-haiku-test"
+        with self._patch_settings():
+            # MODEL_MAPはモジュールロード時に評価されるのでpatchが必要
+            with patch(
+                "app.llm.providers.azure_foundry.MODEL_MAP",
+                {
+                    "haiku": "gpt-5-nano",
+                    "sonnet": "gpt-5-mini",
+                    "opus": "gpt-5",
+                },
+            ):
+                provider = AzureFoundryProvider()
 
-            provider = AzureFoundryProvider()
-
-            respx.post("https://test.azure.com/anthropic/v1/messages").mock(
-                return_value=httpx.Response(
-                    200, json=_anthropic_response("Hello, world!")
+                respx.post(self._mock_url("gpt-5-nano")).mock(
+                    return_value=httpx.Response(
+                        200, json=_openai_response("Hello, world!")
+                    )
                 )
-            )
 
-            result = await provider.chat(
-                messages=[{"role": "user", "content": "Hi"}],
-                model="haiku",
-            )
+                result = await provider.chat(
+                    messages=[{"role": "user", "content": "Hi"}],
+                    model="haiku",
+                )
 
-            assert result == "Hello, world!"
+                assert result == "Hello, world!"
 
     @pytest.mark.asyncio
     @respx.mock
     async def test_azure_foundry_chat_json(self):
         """chat_jsonがJSON応答をパースして返す"""
-        with patch("app.llm.providers.azure_foundry.settings") as mock_settings:
-            mock_settings.azure_ai_foundry_endpoint = "https://test.azure.com"
-            mock_settings.azure_ai_foundry_api_key = "test-key"
-            mock_settings.claude_sonnet_model = "claude-sonnet-test"
-            mock_settings.claude_haiku_model = "claude-haiku-test"
+        with self._patch_settings():
+            with patch(
+                "app.llm.providers.azure_foundry.MODEL_MAP",
+                {
+                    "haiku": "gpt-5-nano",
+                    "sonnet": "gpt-5-mini",
+                    "opus": "gpt-5",
+                },
+            ):
+                provider = AzureFoundryProvider()
 
-            provider = AzureFoundryProvider()
+                json_text = json.dumps({"key": "value", "count": 42})
+                respx.post(self._mock_url("gpt-5-nano")).mock(
+                    return_value=httpx.Response(200, json=_openai_response(json_text))
+                )
 
-            json_text = json.dumps({"key": "value", "count": 42})
-            respx.post("https://test.azure.com/anthropic/v1/messages").mock(
-                return_value=httpx.Response(200, json=_anthropic_response(json_text))
-            )
+                result = await provider.chat_json(
+                    messages=[{"role": "user", "content": "Give me JSON"}],
+                )
 
-            result = await provider.chat_json(
-                messages=[{"role": "user", "content": "Give me JSON"}],
-            )
-
-            assert result == {"key": "value", "count": 42}
+                assert result == {"key": "value", "count": 42}
 
     @pytest.mark.asyncio
     @respx.mock
     async def test_azure_foundry_get_usage_info(self):
         """get_usage_infoがトークン使用量を含むレスポンスを返す"""
-        with patch("app.llm.providers.azure_foundry.settings") as mock_settings:
-            mock_settings.azure_ai_foundry_endpoint = "https://test.azure.com"
-            mock_settings.azure_ai_foundry_api_key = "test-key"
-            mock_settings.claude_sonnet_model = "claude-sonnet-test"
-            mock_settings.claude_haiku_model = "claude-haiku-test"
+        with self._patch_settings():
+            with patch(
+                "app.llm.providers.azure_foundry.MODEL_MAP",
+                {
+                    "haiku": "gpt-5-nano",
+                    "sonnet": "gpt-5-mini",
+                    "opus": "gpt-5",
+                },
+            ):
+                provider = AzureFoundryProvider()
 
-            provider = AzureFoundryProvider()
-
-            respx.post("https://test.azure.com/anthropic/v1/messages").mock(
-                return_value=httpx.Response(
-                    200,
-                    json=_anthropic_response(
-                        "Response text", input_tokens=100, output_tokens=50
-                    ),
+                respx.post(self._mock_url("gpt-5-nano")).mock(
+                    return_value=httpx.Response(
+                        200,
+                        json=_openai_response(
+                            "Response text", prompt_tokens=100, completion_tokens=50
+                        ),
+                    )
                 )
-            )
 
-            result = await provider.get_usage_info(
-                messages=[{"role": "user", "content": "Test"}],
-            )
+                result = await provider.get_usage_info(
+                    messages=[{"role": "user", "content": "Test"}],
+                )
 
-            assert result["text"] == "Response text"
-            assert result["input_tokens"] == 100
-            assert result["output_tokens"] == 50
-            assert result["model"] == "claude-haiku-test"
+                assert result["text"] == "Response text"
+                assert result["input_tokens"] == 100
+                assert result["output_tokens"] == 50
+                assert result["model"] == "gpt-5-nano"
 
     @pytest.mark.asyncio
     @respx.mock
     async def test_azure_foundry_api_error(self):
         """APIエラー時にHTTPStatusErrorが発生する"""
-        with patch("app.llm.providers.azure_foundry.settings") as mock_settings:
-            mock_settings.azure_ai_foundry_endpoint = "https://test.azure.com"
-            mock_settings.azure_ai_foundry_api_key = "test-key"
-            mock_settings.claude_sonnet_model = "claude-sonnet-test"
-            mock_settings.claude_haiku_model = "claude-haiku-test"
+        with self._patch_settings():
+            with patch(
+                "app.llm.providers.azure_foundry.MODEL_MAP",
+                {
+                    "haiku": "gpt-5-nano",
+                    "sonnet": "gpt-5-mini",
+                    "opus": "gpt-5",
+                },
+            ):
+                provider = AzureFoundryProvider()
 
-            provider = AzureFoundryProvider()
+                respx.post(self._mock_url("gpt-5-nano")).mock(
+                    return_value=httpx.Response(429, json={"error": "rate limited"})
+                )
 
-            respx.post("https://test.azure.com/anthropic/v1/messages").mock(
-                return_value=httpx.Response(429, json={"error": "rate limited"})
-            )
+                with pytest.raises(httpx.HTTPStatusError):
+                    await provider.chat(
+                        messages=[{"role": "user", "content": "Hi"}],
+                    )
 
-            with pytest.raises(httpx.HTTPStatusError):
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_azure_foundry_chat_with_system(self):
+        """systemプロンプト指定時にOpenAI形式のsystemメッセージに変換される"""
+        with self._patch_settings():
+            with patch(
+                "app.llm.providers.azure_foundry.MODEL_MAP",
+                {
+                    "haiku": "gpt-5-nano",
+                    "sonnet": "gpt-5-mini",
+                    "opus": "gpt-5",
+                },
+            ):
+                provider = AzureFoundryProvider()
+
+                route = respx.post(self._mock_url("gpt-5-mini")).mock(
+                    return_value=httpx.Response(200, json=_openai_response("OK"))
+                )
+
                 await provider.chat(
                     messages=[{"role": "user", "content": "Hi"}],
+                    model="sonnet",
+                    system="You are a business English tutor.",
                 )
+
+                request_body = json.loads(route.calls[0].request.content)
+                assert request_body["messages"][0]["role"] == "system"
+                assert (
+                    request_body["messages"][0]["content"]
+                    == "You are a business English tutor."
+                )
+                assert request_body["messages"][1]["role"] == "user"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_azure_foundry_model_mapping(self):
+        """モデルエイリアスが正しいデプロイ名に解決される"""
+        with self._patch_settings():
+            with patch(
+                "app.llm.providers.azure_foundry.MODEL_MAP",
+                {
+                    "haiku": "gpt-5-nano",
+                    "sonnet": "gpt-5-mini",
+                    "opus": "gpt-5",
+                },
+            ):
+                provider = AzureFoundryProvider()
+                assert provider._resolve_model("haiku") == "gpt-5-nano"
+                assert provider._resolve_model("sonnet") == "gpt-5-mini"
+                assert provider._resolve_model("opus") == "gpt-5"
+                assert provider._resolve_model("custom-model") == "custom-model"
+
+    def test_azure_foundry_name(self):
+        """プロバイダー名がazure_foundryであること"""
+        with self._patch_settings():
+            provider = AzureFoundryProvider()
+            assert provider.name == "azure_foundry"
+
+    def test_azure_foundry_extract_text(self):
+        """OpenAIレスポンスからテキスト抽出が正常に動作する"""
+        data = _openai_response("extracted text")
+        assert AzureFoundryProvider._extract_text(data) == "extracted text"
+
+    def test_azure_foundry_extract_text_empty(self):
+        """空のchoicesでテキスト抽出が空文字を返す"""
+        assert AzureFoundryProvider._extract_text({"choices": []}) == ""
+        assert AzureFoundryProvider._extract_text({}) == ""
+
+    def test_azure_foundry_extract_usage(self):
+        """OpenAIレスポンスからトークン使用量抽出が正常に動作する"""
+        data = _openai_response("text", prompt_tokens=100, completion_tokens=50)
+        usage = AzureFoundryProvider._extract_usage(data)
+        assert usage == {"input_tokens": 100, "output_tokens": 50}
+
+    def test_azure_foundry_extract_usage_missing(self):
+        """usage情報がない場合に0を返す"""
+        usage = AzureFoundryProvider._extract_usage({})
+        assert usage == {"input_tokens": 0, "output_tokens": 0}
 
 
 # ============================================================
@@ -173,8 +290,6 @@ class TestAnthropicDirectProvider:
         """Anthropic Direct APIへのchat呼び出しが正常に動作する"""
         with patch("app.llm.providers.anthropic_direct.settings") as mock_settings:
             mock_settings.anthropic_api_key = "sk-ant-test"
-            mock_settings.claude_sonnet_model = "claude-sonnet-test"
-            mock_settings.claude_haiku_model = "claude-haiku-test"
 
             provider = AnthropicDirectProvider()
 
@@ -197,8 +312,6 @@ class TestAnthropicDirectProvider:
         """Anthropic Direct APIのget_usage_infoが正常に動作する"""
         with patch("app.llm.providers.anthropic_direct.settings") as mock_settings:
             mock_settings.anthropic_api_key = "sk-ant-test"
-            mock_settings.claude_sonnet_model = "claude-sonnet-test"
-            mock_settings.claude_haiku_model = "claude-haiku-test"
 
             provider = AnthropicDirectProvider()
 

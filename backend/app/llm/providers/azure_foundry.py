@@ -14,6 +14,7 @@ from app.llm.base import LLMProvider
 
 logger = logging.getLogger(__name__)
 
+
 class AzureFoundryProvider(LLMProvider):
     """Azure AI Foundry上のClaudeモデルとの通信を管理するプロバイダー"""
 

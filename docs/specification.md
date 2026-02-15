@@ -572,24 +572,28 @@ class LLMProvider(ABC):
 
 ### モデルマッピング
 
-| プロバイダー | 設定キー | Sonnet モデル | Haiku モデル |
-|-------------|---------|--------------|-------------|
-| azure_foundry | claude_sonnet_model / claude_haiku_model | claude-sonnet-4-5-20250929 | claude-haiku-4-5-20251001 |
-| anthropic | (同上) | claude-sonnet-4-5-20250929 | claude-haiku-4-5-20251001 |
-| bedrock | aws_bedrock_model_sonnet / _haiku | anthropic.claude-sonnet-4-5-20250929-v1:0 | anthropic.claude-haiku-4-5-20251001-v1:0 |
-| vertex | gcp_vertex_model_sonnet / _haiku | claude-sonnet-4-5-20250929 | claude-haiku-4-5-20251001 |
-| local | local_model_smart / local_model_fast | llama3.1:8b | llama3.1:8b |
+| プロバイダー | 設定キー | Opus モデル | Sonnet モデル | Haiku モデル |
+|-------------|---------|------------|--------------|-------------|
+| azure_foundry | claude_opus_model / _sonnet / _haiku | claude-opus-4-6 | claude-sonnet-4-5-20250929 | claude-haiku-4-5-20251001 |
+| anthropic | (同上) | claude-opus-4-6 | claude-sonnet-4-5-20250929 | claude-haiku-4-5-20251001 |
+| bedrock | aws_bedrock_model_opus / _sonnet / _haiku | anthropic.claude-opus-4-6-v1:0 | anthropic.claude-sonnet-4-5-20250929-v1:0 | anthropic.claude-haiku-4-5-20251001-v1:0 |
+| vertex | gcp_vertex_model_opus / _sonnet / _haiku | claude-opus-4-6 | claude-sonnet-4-5-20250929 | claude-haiku-4-5-20251001 |
+| local | local_model_smart / local_model_fast | - | llama3.1:8b | llama3.1:8b |
 
 ### コスト試算（USD / 100万トークン）
 
 | プロバイダー | モデル | 入力単価 | 出力単価 |
 |-------------|-------|---------|---------|
+| azure_foundry | Opus | $5.00 | $25.00 |
 | azure_foundry | Sonnet | $3.00 | $15.00 |
 | azure_foundry | Haiku | $0.80 | $4.00 |
+| anthropic | Opus | $5.00 | $25.00 |
 | anthropic | Sonnet | $3.00 | $15.00 |
 | anthropic | Haiku | $0.80 | $4.00 |
+| bedrock | Opus | $5.00 | $25.00 |
 | bedrock | Sonnet | $3.00 | $15.00 |
 | bedrock | Haiku | $0.80 | $4.00 |
+| vertex | Opus | $5.00 | $25.00 |
 | vertex | Sonnet | $3.00 | $15.00 |
 | vertex | Haiku | $0.80 | $4.00 |
 | local | 全モデル | $0.00 | $0.00 |

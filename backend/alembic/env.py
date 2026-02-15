@@ -37,8 +37,8 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    """環境変数から同期DB URLを取得（Alembicは同期接続を使用）"""
-    return settings.database_url_sync
+    """環境変数から非同期DB URLを取得（async_engine_from_configで使用）"""
+    return settings.database_url
 
 
 def run_migrations_offline() -> None:

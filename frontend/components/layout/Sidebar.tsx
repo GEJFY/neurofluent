@@ -49,7 +49,7 @@ export default function Sidebar() {
   }, [isDark]);
 
   return (
-    <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-[var(--color-bg-secondary)] border-r border-[var(--color-border)]">
+    <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 z-40 bg-[var(--color-bg-secondary)] border-r border-[var(--color-border)]">
       {/* ロゴエリア */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-[var(--color-border)]">
         <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">

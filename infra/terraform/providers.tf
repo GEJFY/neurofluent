@@ -37,8 +37,9 @@ provider "aws" {
 }
 
 # Google Cloud プロバイダー
+# GCP未使用時でもプロバイダー初期化にはproject_idが必要なためダミー値を設定
 provider "google" {
-  project = var.gcp_project_id
+  project = var.gcp_project_id != "" ? var.gcp_project_id : "unused-project"
   region  = var.gcp_region
 
   # 認証情報は環境変数 GOOGLE_APPLICATION_CREDENTIALS で設定

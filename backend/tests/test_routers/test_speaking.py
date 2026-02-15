@@ -116,4 +116,4 @@ class TestSpeakingRouter:
     async def test_unauthenticated(self, client):
         """未認証ユーザーは401エラー"""
         response = await client.get("/api/speaking/flash")
-        assert response.status_code == 403
+        assert response.status_code == 401

@@ -106,4 +106,4 @@ class TestSubscriptionRouter:
     async def test_unauthenticated(self, client):
         """未認証ユーザーはエラー"""
         response = await client.get("/api/subscription/plans")
-        assert response.status_code == 403
+        assert response.status_code == 401

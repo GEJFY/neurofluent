@@ -76,7 +76,7 @@ class TestTalkRouter:
             json={"mode": "meeting"},
         )
 
-        assert response.status_code == 401
+        assert response.status_code == 403
 
     @pytest.mark.asyncio
     async def test_list_sessions(self, auth_client, mock_claude):

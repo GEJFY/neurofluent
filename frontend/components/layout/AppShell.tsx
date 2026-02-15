@@ -14,7 +14,7 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { token, isInitialized, initialize } = useAuthStore();
+  const { user, isInitialized, initialize } = useAuthStore();
 
   // 初期化：localStorageからトークン復元
   useEffect(() => {
@@ -23,10 +23,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   // 未認証ならログインページへリダイレクト
   useEffect(() => {
-    if (isInitialized && !token && pathname !== "/login") {
+    if (isInitialized && !user && pathname !== "/login") {
       router.replace("/login");
     }
-  }, [isInitialized, token, pathname, router]);
+  }, [isInitialized, user, pathname, router]);
 
   // ログインページの場合はシェルなしで表示
   if (pathname === "/login") {
@@ -46,7 +46,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   // 未認証でリダイレクト待ちの場合
-  if (!token) {
+  if (!user) {
     return null;
   }
 

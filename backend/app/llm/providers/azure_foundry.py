@@ -14,13 +14,6 @@ from app.llm.base import LLMProvider
 
 logger = logging.getLogger(__name__)
 
-# モデル名のマッピング
-MODEL_MAP = {
-    "sonnet": settings.claude_sonnet_model,
-    "haiku": settings.claude_haiku_model,
-}
-
-
 class AzureFoundryProvider(LLMProvider):
     """Azure AI Foundry上のClaudeモデルとの通信を管理するプロバイダー"""
 
@@ -35,7 +28,11 @@ class AzureFoundryProvider(LLMProvider):
 
     def _resolve_model(self, model: str) -> str:
         """モデルのエイリアスを実際のモデルIDに解決"""
-        return MODEL_MAP.get(model, model)
+        model_map = {
+            "sonnet": settings.claude_sonnet_model,
+            "haiku": settings.claude_haiku_model,
+        }
+        return model_map.get(model, model)
 
     def _build_url(self) -> str:
         """APIエンドポイントURLを構築"""

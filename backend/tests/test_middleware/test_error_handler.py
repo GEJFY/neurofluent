@@ -112,7 +112,7 @@ class TestErrorHandler:
     async def test_unhandled_error(self):
         """未処理例外が500の統一フォーマットで返される"""
         app = _create_test_app()
-        transport = ASGITransport(app=app)
+        transport = ASGITransport(app=app, raise_app_exceptions=False)
 
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             response = await client.get("/test/unhandled")

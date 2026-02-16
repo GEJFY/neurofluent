@@ -18,7 +18,9 @@ import AppShell from "@/components/layout/AppShell";
 import AudioPlayer from "@/components/audio/AudioPlayer";
 import AudioRecorder from "@/components/audio/AudioRecorder";
 import PronunciationScore from "@/components/audio/PronunciationScore";
-import { api } from "@/lib/api";
+import { api, ShadowingMaterial, ShadowingResult } from "@/lib/api";
+import { useToastStore } from "@/lib/stores/toast-store";
+import { CardSkeleton } from "@/components/ui/Skeleton";
 
 /**
  * シャドーイングページ
@@ -48,6 +50,8 @@ interface ShadowingExercise {
   text: string;
   audioUrl: string;
   duration: number;
+  keyPhrases?: string[];
+  vocabularyNotes?: { word: string; meaning: string; example: string }[];
 }
 
 // 発音評価結果型
@@ -102,8 +106,8 @@ const DIFFICULTIES: DifficultyOption[] = [
   { id: "advanced", label: "Advanced", color: "text-red-400 bg-red-500/15" },
 ];
 
-// デモ用のサンプルデータ（実際にはAPIから取得）
-const SAMPLE_EXERCISES: Record<string, ShadowingExercise> = {
+// フォールバック用のサンプルデータ（API失敗時に使用）
+const FALLBACK_EXERCISES: Record<string, ShadowingExercise> = {
   business_meeting: {
     id: "shadow-1",
     topic: "business_meeting",
@@ -155,25 +159,50 @@ export default function ShadowingPage() {
   const [showText, setShowText] = useState(true);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [result, setResult] = useState<PronunciationResult | null>(null);
+  const addToast = useToastStore((s) => s.addToast);
 
   // セットアップ → リスニング開始
   const handleStart = useCallback(async () => {
     setIsLoading(true);
     try {
-      // デモ用：ローカルサンプルデータを使用
-      // 実際にはAPIからデータを取得: await api.getShadowingExercise(selectedTopic, selectedDifficulty)
-      const sample = SAMPLE_EXERCISES[selectedTopic] || SAMPLE_EXERCISES.business_meeting;
+      // APIからシャドーイング素材を取得
+      const material: ShadowingMaterial = await api.getShadowingMaterial(
+        selectedTopic,
+        selectedDifficulty
+      );
+      // APIレスポンスをShadowingExercise型にマッピング
+      let audioUrl = "";
+      try {
+        const audioBlob = await api.requestTTS(material.text);
+        audioUrl = URL.createObjectURL(audioBlob);
+      } catch {
+        // TTS失敗時は空URLのまま（AudioPlayerがハンドル）
+      }
+      setExercise({
+        id: `shadow-api-${Date.now()}`,
+        topic: selectedTopic,
+        difficulty: material.difficulty || selectedDifficulty,
+        text: material.text,
+        audioUrl,
+        duration: Math.ceil(material.text.split(" ").length / 2.5),
+        keyPhrases: material.key_phrases,
+        vocabularyNotes: material.vocabulary_notes,
+      });
+      setState("listening");
+    } catch (err) {
+      // API失敗時はフォールバックデータを使用
+      console.error("Failed to load exercise from API:", err);
+      addToast("error", "APIからデータを取得できませんでした。デモデータを使用します。");
+      const sample = FALLBACK_EXERCISES[selectedTopic] || FALLBACK_EXERCISES.business_meeting;
       setExercise({
         ...sample,
         difficulty: selectedDifficulty,
       });
       setState("listening");
-    } catch (err) {
-      console.error("Failed to load exercise:", err);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedTopic, selectedDifficulty]);
+  }, [selectedTopic, selectedDifficulty, addToast]);
 
   // リスニング完了 → シャドーイングへ
   const handleListeningComplete = useCallback(() => {
@@ -186,8 +215,29 @@ export default function ShadowingPage() {
     setRecordedBlob(blob);
     setIsLoading(true);
     try {
-      // デモ用：モック結果を生成
-      // 実際にはAPIで音声解析: await api.analyzePronunciation(blob, exercise.id)
+      // APIでシャドーイング音声を評価
+      const apiResult: ShadowingResult = await api.evaluateShadowing(
+        blob,
+        exercise?.text || "",
+        1.0
+      );
+      // APIレスポンスをPronunciationResult型にマッピング
+      setResult({
+        accuracy: apiResult.accuracy,
+        fluency: apiResult.fluency,
+        prosody: apiResult.prosody,
+        completeness: apiResult.completeness,
+        wordScores: apiResult.word_scores.map((ws) => ({
+          word: ws.word,
+          accuracy: ws.accuracy_score,
+          error: ws.error_type || undefined,
+        })),
+      });
+      setState("result");
+    } catch (err) {
+      // API失敗時はモック結果をフォールバック
+      console.error("Failed to evaluate shadowing:", err);
+      addToast("error", "音声評価に失敗しました。ローカルスコアを表示します。");
       const mockResult: PronunciationResult = {
         accuracy: 78 + Math.random() * 15,
         fluency: 72 + Math.random() * 18,
@@ -201,12 +251,10 @@ export default function ShadowingPage() {
       };
       setResult(mockResult);
       setState("result");
-    } catch (err) {
-      console.error("Failed to analyze pronunciation:", err);
     } finally {
       setIsLoading(false);
     }
-  }, [exercise]);
+  }, [exercise, addToast]);
 
   // リトライ
   const handleRetry = useCallback(() => {
@@ -218,21 +266,28 @@ export default function ShadowingPage() {
 
   // 次の問題
   const handleNext = useCallback(() => {
+    // 前回のTTS用ObjectURLをクリーンアップ
+    if (exercise?.audioUrl && exercise.audioUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(exercise.audioUrl);
+    }
     setRecordedBlob(null);
     setResult(null);
     setExercise(null);
     setShowText(true);
     setState("setup");
-  }, []);
+  }, [exercise]);
 
   // セットアップに戻る
   const handleBack = useCallback(() => {
+    if (exercise?.audioUrl && exercise.audioUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(exercise.audioUrl);
+    }
     setState("setup");
     setExercise(null);
     setRecordedBlob(null);
     setResult(null);
     setShowText(true);
-  }, []);
+  }, [exercise]);
 
   return (
     <AppShell>

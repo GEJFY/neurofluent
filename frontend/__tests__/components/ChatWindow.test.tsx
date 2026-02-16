@@ -1,7 +1,12 @@
 import { render, screen } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeAll } from 'vitest'
 import ChatWindow from '@/components/chat/ChatWindow'
 import type { TalkMessageResponse } from '@/lib/api'
+
+// jsdom に scrollIntoView が無いためモック
+beforeAll(() => {
+  Element.prototype.scrollIntoView = vi.fn()
+})
 
 // MessageBubble のモック（ChatWindowの責務に集中するため）
 vi.mock('@/components/chat/MessageBubble', () => ({

@@ -41,7 +41,9 @@ describe('PlanCard', () => {
 
   it('プラン名が表示される', () => {
     render(<PlanCard plan={freePlan} isCurrent={false} onSelect={mockOnSelect} />)
-    expect(screen.getByText('Free')).toBeInTheDocument()
+    // "Free" はプラン名と価格の両方に表示される
+    const freeTexts = screen.getAllByText('Free')
+    expect(freeTexts.length).toBe(2)
     expect(screen.getByText('無料プラン')).toBeInTheDocument()
   })
 

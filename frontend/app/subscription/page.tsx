@@ -1,16 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { ChevronDown } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import PlanCard from "@/components/subscription/PlanCard";
+import { useApiData } from "@/lib/hooks/useApiData";
+import { api } from "@/lib/api";
+import type {
+  PlanInfo as ApiPlanInfo,
+  SubscriptionInfo,
+} from "@/lib/api";
+import { useToastStore } from "@/lib/stores/toast-store";
+import { CardSkeleton } from "@/components/ui/Skeleton";
 
 /**
  * サブスクリプション管理ページ
  * プラン比較 / 請求情報 / FAQ
+ * APIからプラン・サブスク情報を取得し、失敗時はフォールバックデータを表示
  */
 
-interface PlanInfo {
+// PlanCardコンポーネントが期待するUI用プラン型
+interface UIPlanInfo {
   id: string;
   name: string;
   nameJa: string;
@@ -21,7 +31,8 @@ interface PlanInfo {
   popular?: boolean;
 }
 
-const PLANS: PlanInfo[] = [
+// フォールバック用ハードコードデータ
+const FALLBACK_PLANS: UIPlanInfo[] = [
   {
     id: "free",
     name: "Free",
@@ -116,18 +127,159 @@ const FAQ_ITEMS = [
   },
 ];
 
-export default function SubscriptionPage() {
-  const [currentPlan] = useState("free");
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+// プラン名の日本語マッピング
+const PLAN_NAME_JA: Record<string, string> = {
+  free: "フリー",
+  starter: "スターター",
+  standard: "スタンダード",
+  premium: "プレミアム",
+  enterprise: "エンタープライズ",
+};
 
-  const handleSelectPlan = (planId: string) => {
-    // デモ：プラン選択処理
-    console.log("Selected plan:", planId);
+// プラン説明のマッピング
+const PLAN_DESCRIPTION: Record<string, string> = {
+  free: "英語学習を始めるための基本プラン",
+  starter: "英語学習を始めるための入門プラン",
+  standard: "本格的な英語力アップのための推奨プラン",
+  premium: "企業向けの全機能アクセスプラン",
+  enterprise: "大規模チーム向けのカスタムプラン",
+};
+
+/** API PlanInfo → UI PlanInfo に変換 */
+function mapApiPlanToUIPlan(apiPlan: ApiPlanInfo): UIPlanInfo {
+  const planId = apiPlan.id.toLowerCase();
+  return {
+    id: apiPlan.id,
+    name: apiPlan.name,
+    nameJa: PLAN_NAME_JA[planId] || apiPlan.name,
+    price: apiPlan.price_monthly,
+    priceLabel:
+      apiPlan.price_monthly === 0
+        ? "¥0/月"
+        : `¥${apiPlan.price_monthly.toLocaleString()}/月`,
+    description: PLAN_DESCRIPTION[planId] || `${apiPlan.name}プラン`,
+    features: apiPlan.features.map((f) => ({
+      text: f.description || f.name,
+      included: f.included,
+    })),
+    popular: planId === "standard",
+  };
+}
+
+/** 日付文字列をフォーマット */
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return "-";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+export default function SubscriptionPage() {
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+  const [isCancelLoading, setIsCancelLoading] = useState(false);
+  const addToast = useToastStore((s) => s.addToast);
+
+  // --- API データ取得 ---
+
+  const {
+    data: apiPlans,
+    isLoading: plansLoading,
+  } = useApiData<ApiPlanInfo[]>({
+    fetcher: useCallback(() => api.getSubscriptionPlans(), []),
+    fallback: undefined,
+  });
+
+  const {
+    data: currentSubscription,
+    isLoading: subLoading,
+    refetch: refetchSubscription,
+  } = useApiData<SubscriptionInfo>({
+    fetcher: useCallback(() => api.getCurrentSubscription(), []),
+    fallback: undefined,
+  });
+
+  // --- APIデータ → UI用データ変換（フォールバック付き） ---
+
+  const plans: UIPlanInfo[] = apiPlans
+    ? apiPlans.map(mapApiPlanToUIPlan)
+    : FALLBACK_PLANS;
+
+  // 現在のプランID（APIから取得、フォールバックは "free"）
+  const currentPlanId = currentSubscription?.plan?.toLowerCase() ?? "free";
+
+  // is_currentフラグがAPIプランにある場合はそちらを優先
+  const getCurrentPlanId = (): string => {
+    if (apiPlans) {
+      const currentFromApi = apiPlans.find((p) => p.is_current);
+      if (currentFromApi) return currentFromApi.id;
+    }
+    return currentPlanId;
+  };
+
+  const activePlanId = getCurrentPlanId();
+
+  // --- イベントハンドラ ---
+
+  const handleSelectPlan = async (planId: string) => {
+    if (planId === activePlanId) return;
+
+    // Freeプランへのダウングレードの場合はキャンセルフローへ
+    if (planId === "free") {
+      handleCancelSubscription();
+      return;
+    }
+
+    setIsCheckoutLoading(true);
+    try {
+      const checkout = await api.createCheckout(planId);
+      if (checkout.checkout_url) {
+        window.location.href = checkout.checkout_url;
+      } else {
+        addToast("error", "チェックアウトURLの取得に失敗しました。");
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "プラン変更に失敗しました。";
+      addToast("error", message);
+    } finally {
+      setIsCheckoutLoading(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (isCancelLoading) return;
+
+    setIsCancelLoading(true);
+    try {
+      const result = await api.cancelSubscription();
+      if (result.success) {
+        addToast("success", "サブスクリプションのキャンセルが完了しました。");
+        refetchSubscription();
+      } else {
+        addToast("error", result.message || "キャンセルに失敗しました。");
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "キャンセルに失敗しました。";
+      addToast("error", message);
+    } finally {
+      setIsCancelLoading(false);
+    }
   };
 
   const toggleFaq = (index: number) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
   };
+
+  const isLoading = plansLoading || subLoading;
 
   return (
     <AppShell>
@@ -143,19 +295,36 @@ export default function SubscriptionPage() {
         </div>
 
         {/* プランカード */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {PLANS.map((plan) => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              isCurrent={currentPlan === plan.id}
-              onSelect={() => handleSelectPlan(plan.id)}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {plans.map((plan) => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                isCurrent={activePlanId === plan.id}
+                onSelect={() => handleSelectPlan(plan.id)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* チェックアウトローディングオーバーレイ */}
+        {isCheckoutLoading && (
+          <div className="text-center py-4">
+            <p className="text-sm text-[var(--color-text-muted)] animate-pulse">
+              チェックアウトページに移動中...
+            </p>
+          </div>
+        )}
 
         {/* 請求情報（サブスクライブ中の場合） */}
-        {currentPlan !== "free" && (
+        {activePlanId !== "free" && (
           <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-5 space-y-4">
             <p className="text-sm font-semibold text-[var(--color-text-primary)]">
               Billing Information
@@ -166,21 +335,42 @@ export default function SubscriptionPage() {
                   Next Billing Date
                 </p>
                 <p className="text-sm font-medium text-[var(--color-text-primary)] mt-0.5">
-                  March 14, 2026
+                  {currentSubscription
+                    ? formatDate(currentSubscription.current_period_end)
+                    : "March 14, 2026"}
                 </p>
               </div>
               <div className="p-3 rounded-xl bg-[var(--color-bg-primary)]/50">
                 <p className="text-xs text-[var(--color-text-muted)]">
-                  Payment Method
+                  Status
                 </p>
                 <p className="text-sm font-medium text-[var(--color-text-primary)] mt-0.5">
-                  **** **** **** 4242
+                  {currentSubscription?.cancel_at_period_end
+                    ? "Cancelling at period end"
+                    : currentSubscription?.status === "active"
+                      ? "Active"
+                      : currentSubscription?.status ?? "Active"}
                 </p>
               </div>
             </div>
-            <button className="px-4 py-2 rounded-xl border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/10 transition-colors">
-              Cancel Subscription
-            </button>
+            {!currentSubscription?.cancel_at_period_end && (
+              <button
+                onClick={handleCancelSubscription}
+                disabled={isCancelLoading}
+                className={`px-4 py-2 rounded-xl border border-red-500/30 text-red-400 text-xs font-medium transition-colors ${
+                  isCancelLoading
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-red-500/10"
+                }`}
+              >
+                {isCancelLoading ? "Processing..." : "Cancel Subscription"}
+              </button>
+            )}
+            {currentSubscription?.cancel_at_period_end && (
+              <p className="text-xs text-[var(--color-text-muted)]">
+                現在の期間終了後にキャンセルされます。
+              </p>
+            )}
           </div>
         )}
 

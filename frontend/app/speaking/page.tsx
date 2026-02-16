@@ -6,7 +6,6 @@ import {
   Repeat2,
   AudioLines,
   ChevronRight,
-  Lock,
 } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 
@@ -56,7 +55,7 @@ const MENU_ITEMS: SpeakingMenuItem[] = [
       "音素レベルで発音を矯正。リンキング・リダクション・イントネーションを集中的に練習します。",
     href: "/speaking/pronunciation",
     icon: AudioLines,
-    available: false,
+    available: true,
   },
 ];
 
@@ -118,12 +117,6 @@ export default function SpeakingPage() {
                         NEW
                       </span>
                     )}
-                    {!item.available && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-warning/15 text-warning">
-                        <Lock className="w-2.5 h-2.5" />
-                        Coming Soon
-                      </span>
-                    )}
                   </div>
                   <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                     {item.titleJa}
@@ -160,12 +153,6 @@ export default function SpeakingPage() {
           })}
         </div>
 
-        {/* 補足メッセージ */}
-        <div className="text-center py-4">
-          <p className="text-xs text-[var(--color-text-muted)]">
-            Coming Soon のトレーニングは今後のアップデートで追加されます
-          </p>
-        </div>
       </div>
     </AppShell>
   );

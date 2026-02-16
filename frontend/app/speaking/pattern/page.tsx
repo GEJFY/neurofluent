@@ -9,15 +9,19 @@ import {
 } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import PatternCard from "@/components/drill/PatternCard";
+import { api } from "@/lib/api";
+import { useToastStore } from "@/lib/stores/toast-store";
+import { CardSkeleton } from "@/components/ui/Skeleton";
 
 /**
  * パターンプラクティスページ
  * States: setup → playing → finished
+ * APIに接続し、失敗時はフォールバックデモデータを使用
  */
 
 type PageState = "setup" | "playing" | "finished";
 
-/** パターン練習問題の型 */
+/** パターン練習問題の型（ページ内部用） */
 export interface PatternExercise {
   exercise_id: string;
   category: string;
@@ -85,8 +89,8 @@ const CATEGORIES: CategoryOption[] = [
 
 const COUNT_OPTIONS = [5, 10, 15, 20];
 
-// デモ用のサンプルパターン練習問題
-const SAMPLE_EXERCISES: Record<string, PatternExercise[]> = {
+// フォールバック用のサンプルパターン練習問題（API失敗時に使用）
+const FALLBACK_EXERCISES: Record<string, PatternExercise[]> = {
   meeting: [
     {
       exercise_id: "pat-m1",
@@ -371,6 +375,33 @@ const SAMPLE_EXERCISES: Record<string, PatternExercise[]> = {
   ],
 };
 
+/**
+ * APIレスポンスをページ内部の型にマッピング
+ * api.getPatternExercises() → PatternExercise (ローカル)
+ */
+function mapApiExercise(
+  apiEx: {
+    pattern_id: string;
+    pattern_template: string;
+    example_sentence: string;
+    japanese_hint: string;
+    category: string;
+    difficulty: string;
+    fill_in_blank: boolean;
+  }
+): PatternExercise {
+  return {
+    exercise_id: apiEx.pattern_id,
+    category: apiEx.category,
+    template: apiEx.pattern_template,
+    // fill_in_blank パターンでは blank_prompt はテンプレートから推測
+    blank_prompt: "",
+    japanese_hint: apiEx.japanese_hint,
+    example_answer: apiEx.example_sentence,
+    difficulty: apiEx.difficulty,
+  };
+}
+
 export default function PatternPracticePage() {
   const [pageState, setPageState] = useState<PageState>("setup");
   const [selectedCategory, setSelectedCategory] = useState("meeting");
@@ -381,55 +412,85 @@ export default function PatternPracticePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 問題を取得して開始
+  const addToast = useToastStore((s) => s.addToast);
+
+  // 問題を取得して開始（API優先、フォールバックあり）
   const handleStart = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // デモ用：ローカルサンプルデータを使用
-      // 実際にはAPIから: await api.getPatternExercises(selectedCategory, selectedCount)
-      const categoryExercises = SAMPLE_EXERCISES[selectedCategory] || SAMPLE_EXERCISES.general;
-      const selected = categoryExercises.slice(0, selectedCount);
-      if (selected.length === 0) {
-        setError("問題が見つかりませんでした。");
-        return;
+      // APIから問題取得を試行
+      const apiExercises = await api.getPatternExercises(selectedCount, selectedCategory);
+      const mapped = apiExercises.map(mapApiExercise);
+
+      if (mapped.length === 0) {
+        throw new Error("APIから問題が返りませんでした");
       }
-      setExercises(selected);
+
+      setExercises(mapped);
       setCurrentIndex(0);
       setResults([]);
       setPageState("playing");
     } catch (err) {
-      console.error("Pattern exercises fetch failed:", err);
-      setError("問題の読み込みに失敗しました");
+      console.warn("Pattern exercises API failed, falling back to demo data:", err);
+      // フォールバック：ローカルのデモデータを使用
+      try {
+        const categoryExercises = FALLBACK_EXERCISES[selectedCategory] || FALLBACK_EXERCISES.general;
+        const selected = categoryExercises.slice(0, selectedCount);
+        if (selected.length === 0) {
+          setError("問題が見つかりませんでした。");
+          return;
+        }
+        addToast("info", "オフラインモード：デモデータで練習を開始します");
+        setExercises(selected);
+        setCurrentIndex(0);
+        setResults([]);
+        setPageState("playing");
+      } catch (fallbackErr) {
+        console.error("Fallback also failed:", fallbackErr);
+        setError("問題の読み込みに失敗しました");
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [selectedCategory, selectedCount]);
+  }, [selectedCategory, selectedCount, addToast]);
 
-  // 回答送信
+  // 回答送信（API優先、フォールバックあり）
   const handleSubmit = useCallback(
     async (answer: string): Promise<PatternCheckResult> => {
-      // デモ用：モックで回答チェック
-      // 実際にはAPIから: await api.checkPatternAnswer(exercise.exercise_id, answer)
       const exercise = exercises[currentIndex];
-      const isCorrect =
-        answer.toLowerCase().trim() === exercise.example_answer.toLowerCase().trim() ||
-        exercise.blank_prompt
-          .toLowerCase()
-          .split(" / ")
-          .some((alt) => answer.toLowerCase().trim() === alt.trim());
 
-      const result: PatternCheckResult = {
-        is_correct: isCorrect,
-        score: isCorrect ? 100 : 40 + Math.random() * 30,
-        corrected: exercise.example_answer,
-        explanation: isCorrect
-          ? `Correct! "${exercise.example_answer}" is the natural phrasing for this context.`
-          : `The expected answer is "${exercise.example_answer}". Alternatives: ${exercise.blank_prompt}.`,
-        usage_tip: `This pattern is commonly used in ${exercise.category} situations. Practice using it in your daily conversations.`,
-      };
-      setResults((prev) => [...prev, result]);
-      return result;
+      try {
+        // APIで回答チェックを試行
+        const apiResult = await api.checkPatternAnswer(
+          exercise.exercise_id,
+          answer,
+          exercise.example_answer
+        );
+        setResults((prev) => [...prev, apiResult]);
+        return apiResult;
+      } catch (err) {
+        console.warn("Pattern answer check API failed, using local check:", err);
+        // フォールバック：ローカルで回答チェック
+        const isCorrect =
+          answer.toLowerCase().trim() === exercise.example_answer.toLowerCase().trim() ||
+          exercise.blank_prompt
+            .toLowerCase()
+            .split(" / ")
+            .some((alt) => answer.toLowerCase().trim() === alt.trim());
+
+        const result: PatternCheckResult = {
+          is_correct: isCorrect,
+          score: isCorrect ? 100 : 40 + Math.random() * 30,
+          corrected: exercise.example_answer,
+          explanation: isCorrect
+            ? `Correct! "${exercise.example_answer}" is the natural phrasing for this context.`
+            : `The expected answer is "${exercise.example_answer}". Alternatives: ${exercise.blank_prompt}.`,
+          usage_tip: `This pattern is commonly used in ${exercise.category} situations. Practice using it in your daily conversations.`,
+        };
+        setResults((prev) => [...prev, result]);
+        return result;
+      }
     },
     [exercises, currentIndex]
   );
@@ -570,6 +631,16 @@ export default function PatternPracticePage() {
               questionNumber={currentIndex + 1}
               totalQuestions={exercises.length}
             />
+          </div>
+        )}
+
+        {/* ===== ローディング中（playing遷移時） ===== */}
+        {pageState === "playing" && !exercises[currentIndex] && (
+          <div className="flex-1 flex items-center justify-center py-4">
+            <div className="w-full max-w-lg space-y-4">
+              <CardSkeleton />
+              <CardSkeleton />
+            </div>
           </div>
         )}
 

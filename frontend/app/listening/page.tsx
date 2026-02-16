@@ -6,7 +6,6 @@ import {
   AudioWaveform,
   BookOpenCheck,
   ChevronRight,
-  Lock,
 } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 
@@ -44,7 +43,7 @@ const MENU_ITEMS: ListeningMenuItem[] = [
       "崩れた発音・リンキング・リダクションを聞き取る実践的リスニング。リアルな英語に慣れましょう。",
     href: "/listening/mogomogo",
     icon: Headphones,
-    available: false,
+    available: true,
   },
   {
     id: "comprehension",
@@ -54,7 +53,7 @@ const MENU_ITEMS: ListeningMenuItem[] = [
       "ビジネスシーンの音声を聞いて要約・質問に答える総合的なリスニング力トレーニング。",
     href: "/listening/comprehension",
     icon: BookOpenCheck,
-    available: false,
+    available: true,
   },
 ];
 
@@ -107,12 +106,6 @@ export default function ListeningPage() {
                     <p className="text-sm font-semibold text-[var(--color-text-primary)]">
                       {item.title}
                     </p>
-                    {!item.available && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-warning/15 text-warning">
-                        <Lock className="w-2.5 h-2.5" />
-                        Coming Soon
-                      </span>
-                    )}
                   </div>
                   <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                     {item.titleJa}
@@ -149,12 +142,6 @@ export default function ListeningPage() {
           })}
         </div>
 
-        {/* 補足メッセージ */}
-        <div className="text-center py-4">
-          <p className="text-xs text-[var(--color-text-muted)]">
-            Coming Soon のトレーニングは今後のアップデートで追加されます
-          </p>
-        </div>
       </div>
     </AppShell>
   );

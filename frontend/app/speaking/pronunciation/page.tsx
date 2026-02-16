@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   Mic,
   Play,
@@ -13,10 +13,15 @@ import {
 import AppShell from "@/components/layout/AppShell";
 import PhonemeGrid from "@/components/pronunciation/PhonemeGrid";
 import MinimalPairCard from "@/components/pronunciation/MinimalPairCard";
+import { api } from "@/lib/api";
+import { useApiData } from "@/lib/hooks/useApiData";
+import { useToastStore } from "@/lib/stores/toast-store";
+import { CardSkeleton, ListSkeleton } from "@/components/ui/Skeleton";
 
 /**
  * 発音トレーニングページ
  * 日本語話者向けの音素ペア練習
+ * APIに接続し、失敗時はフォールバックデモデータを使用
  */
 
 type PageState = "select" | "practice" | "result";
@@ -47,8 +52,8 @@ interface PracticeResult {
   feedback: string;
 }
 
-// デモ用の音素データ
-const PHONEME_DATA: PhonemeData[] = [
+// フォールバック用の音素データ（API失敗時に使用）
+const FALLBACK_PHONEME_DATA: PhonemeData[] = [
   { pair: "/r/-/l/", accuracy: 72, practiced: true },
   { pair: "/θ/-/s/", accuracy: 58, practiced: true },
   { pair: "/v/-/b/", accuracy: 85, practiced: true },
@@ -63,8 +68,8 @@ const PHONEME_DATA: PhonemeData[] = [
   { pair: "/tʃ/-/ʃ/", accuracy: 0, practiced: false },
 ];
 
-// デモ用の練習データ
-const PRACTICE_EXERCISES: Record<string, PracticeExercise[]> = {
+// フォールバック用の練習データ（API失敗時に使用）
+const FALLBACK_PRACTICE_EXERCISES: Record<string, PracticeExercise[]> = {
   "/r/-/l/": [
     {
       id: "rl-1",
@@ -158,10 +163,83 @@ export default function PronunciationPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentResult, setCurrentResult] = useState<PracticeResult | null>(null);
+  const [exercises, setExercises] = useState<PracticeExercise[]>([]);
+  const [isLoadingExercises, setIsLoadingExercises] = useState(false);
 
-  const exercises = selectedPair
-    ? PRACTICE_EXERCISES[selectedPair] || DEFAULT_EXERCISES
-    : [];
+  const addToast = useToastStore((s) => s.addToast);
+
+  // MediaRecorder参照（実際の音声録音用）
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  // === マウント時に音素データをAPIから取得（フォールバックあり） ===
+  const {
+    data: phonemeData,
+    isLoading: isLoadingPhonemes,
+  } = useApiData<PhonemeData[]>({
+    fetcher: async () => {
+      // APIから音素リスト取得
+      const apiPhonemes = await api.getPhonemes();
+      // 進捗データも取得を試行
+      let progressData: { phoneme_progress: { phoneme: string; accuracy: number; practice_count: number }[] } | null = null;
+      try {
+        progressData = await api.getPronunciationProgress();
+      } catch {
+        // 進捗取得失敗は無視
+      }
+
+      // API音素データをページ内部の型にマッピング
+      return apiPhonemes.map((p) => {
+        const progress = progressData?.phoneme_progress?.find(
+          (pp) => pp.phoneme === p.phoneme_pair
+        );
+        return {
+          pair: p.phoneme_pair,
+          accuracy: progress?.accuracy ?? 0,
+          practiced: (progress?.practice_count ?? 0) > 0,
+        };
+      });
+    },
+    fallback: FALLBACK_PHONEME_DATA,
+  });
+
+  // 表示用の音素データ（undefinedの場合はフォールバック）
+  const displayPhonemes = phonemeData ?? FALLBACK_PHONEME_DATA;
+
+  // 練習問題をロード（API優先、フォールバックあり）
+  const loadExercises = useCallback(async (pair: string) => {
+    setIsLoadingExercises(true);
+    try {
+      const apiExercises = await api.getPronunciationExercises(pair, "minimal_pair", 5);
+
+      if (apiExercises.length === 0) {
+        throw new Error("APIから練習問題が返りませんでした");
+      }
+
+      // API レスポンスをページ内部の型にマッピング
+      const mapped: PracticeExercise[] = apiExercises.map((ex) => ({
+        id: ex.exercise_id,
+        type: (ex.exercise_type as ExerciseType) || "minimal_pair",
+        wordA: ex.word_a,
+        wordB: ex.word_b ?? "",
+        ipaA: ex.ipa,
+        ipaB: "", // APIが単一IPAの場合
+        targetPhoneme: ex.target_phoneme,
+        sentence: ex.sentence || undefined,
+      }));
+
+      setExercises(mapped);
+    } catch (err) {
+      console.warn("Pronunciation exercises API failed, falling back to demo data:", err);
+      // フォールバック：ローカルのデモデータを使用
+      const fallbackExercises = FALLBACK_PRACTICE_EXERCISES[pair] || DEFAULT_EXERCISES;
+      addToast("info", "オフラインモード：デモデータで練習を開始します");
+      setExercises(fallbackExercises);
+    } finally {
+      setIsLoadingExercises(false);
+    }
+  }, [addToast]);
+
   const currentExercise = exercises[currentIndex];
 
   // 音素ペア選択
@@ -170,37 +248,101 @@ export default function PronunciationPage() {
   }, []);
 
   // 練習開始
-  const handleStartPractice = useCallback(() => {
+  const handleStartPractice = useCallback(async () => {
     if (!selectedPair) return;
     setCurrentIndex(0);
     setResults([]);
     setCurrentResult(null);
+    // 練習問題をAPIからロード
+    await loadExercises(selectedPair);
     setPageState("practice");
-  }, [selectedPair]);
+  }, [selectedPair, loadExercises]);
 
-  // 録音開始
-  const handleRecord = useCallback(() => {
+  // 録音開始（API評価を試行、フォールバックはランダムスコア）
+  const handleRecord = useCallback(async () => {
+    if (!currentExercise) return;
     setIsRecording(true);
     setCurrentResult(null);
-    // デモ：2秒後に録音完了とフィードバック生成
-    setTimeout(() => {
-      setIsRecording(false);
+
+    // Web Audio API で実際の録音を試行
+    let audioBlob: Blob | null = null;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      audioBlob = await new Promise<Blob>((resolve) => {
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(audioChunksRef.current, { type: "audio/wav" });
+          // 全トラックを停止
+          stream.getTracks().forEach((track) => track.stop());
+          resolve(blob);
+        };
+        mediaRecorder.start();
+        // 2秒後に録音停止
+        setTimeout(() => {
+          if (mediaRecorder.state === "recording") {
+            mediaRecorder.stop();
+          }
+        }, 2000);
+      });
+    } catch (micErr) {
+      console.warn("Microphone access failed, using simulated recording:", micErr);
+      // マイクアクセス失敗：2秒待って擬似録音
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+
+    setIsRecording(false);
+
+    // API評価を試行
+    try {
+      if (audioBlob && audioBlob.size > 0) {
+        const apiResult = await api.evaluatePronunciation(
+          audioBlob,
+          currentExercise.targetPhoneme,
+          currentExercise.wordA,
+          currentExercise.id
+        );
+
+        const result: PracticeResult = {
+          exerciseId: currentExercise.id,
+          isCorrect: apiResult.is_correct,
+          score: Math.round(apiResult.accuracy),
+          targetPhoneme: currentExercise.targetPhoneme,
+          feedback: apiResult.feedback,
+        };
+        setCurrentResult(result);
+        setResults((prev) => [...prev, result]);
+        return;
+      }
+      // audioBlob が無い場合はフォールバックへ
+      throw new Error("No audio data available");
+    } catch (err) {
+      console.warn("Pronunciation evaluation API failed, using local scoring:", err);
+      // フォールバック：ランダムスコアで擬似フィードバック
       const isCorrect = Math.random() > 0.4;
       const score = isCorrect
         ? Math.round(75 + Math.random() * 25)
         : Math.round(30 + Math.random() * 40);
       const result: PracticeResult = {
-        exerciseId: currentExercise?.id || "",
+        exerciseId: currentExercise.id,
         isCorrect,
         score,
-        targetPhoneme: currentExercise?.targetPhoneme || "",
+        targetPhoneme: currentExercise.targetPhoneme,
         feedback: isCorrect
           ? "Very good! Clear distinction between the sounds."
           : "Try to focus on the tongue position. The sounds are close but distinguishable.",
       };
       setCurrentResult(result);
       setResults((prev) => [...prev, result]);
-    }, 2000);
+    }
   }, [currentExercise]);
 
   // モデル音声再生
@@ -226,6 +368,7 @@ export default function PronunciationPage() {
     setCurrentIndex(0);
     setResults([]);
     setCurrentResult(null);
+    setExercises([]);
   }, []);
 
   // 結果集計
@@ -253,11 +396,15 @@ export default function PronunciationPage() {
               </p>
             </div>
 
-            {/* 音素グリッド */}
-            <PhonemeGrid
-              phonemes={PHONEME_DATA}
-              onSelect={handleSelectPhoneme}
-            />
+            {/* 音素グリッド（ローディング中はスケルトン） */}
+            {isLoadingPhonemes ? (
+              <ListSkeleton rows={4} />
+            ) : (
+              <PhonemeGrid
+                phonemes={displayPhonemes}
+                onSelect={handleSelectPhoneme}
+              />
+            )}
 
             {/* 選択された音素の詳細 */}
             {selectedPair && (
@@ -273,21 +420,21 @@ export default function PronunciationPage() {
                   </div>
                   <div
                     className={`px-3 py-1 rounded-full text-[10px] font-bold ${
-                      (PHONEME_DATA.find((p) => p.pair === selectedPair)
+                      (displayPhonemes.find((p) => p.pair === selectedPair)
                         ?.accuracy ?? 0) >= 80
                         ? "bg-green-500/10 text-green-400"
-                        : (PHONEME_DATA.find((p) => p.pair === selectedPair)
+                        : (displayPhonemes.find((p) => p.pair === selectedPair)
                             ?.accuracy ?? 0) >= 50
                           ? "bg-warning/10 text-warning"
-                          : (PHONEME_DATA.find((p) => p.pair === selectedPair)
+                          : (displayPhonemes.find((p) => p.pair === selectedPair)
                               ?.accuracy ?? 0) > 0
                             ? "bg-red-500/10 text-red-400"
                             : "bg-[var(--color-bg-input)] text-[var(--color-text-muted)]"
                     }`}
                   >
-                    {PHONEME_DATA.find((p) => p.pair === selectedPair)
+                    {displayPhonemes.find((p) => p.pair === selectedPair)
                       ?.practiced
-                      ? `${PHONEME_DATA.find((p) => p.pair === selectedPair)?.accuracy}%`
+                      ? `${displayPhonemes.find((p) => p.pair === selectedPair)?.accuracy}%`
                       : "Not practiced"}
                   </div>
                 </div>
@@ -322,10 +469,15 @@ export default function PronunciationPage() {
 
                 <button
                   onClick={handleStartPractice}
-                  className="w-full py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-500 transition-colors flex items-center justify-center gap-2"
+                  disabled={isLoadingExercises}
+                  className="w-full py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-500 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                 >
-                  <Mic className="w-4 h-4" />
-                  Start Practice
+                  {isLoadingExercises ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Mic className="w-4 h-4" />
+                  )}
+                  {isLoadingExercises ? "Loading..." : "Start Practice"}
                 </button>
               </div>
             )}
@@ -458,6 +610,16 @@ export default function PronunciationPage() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* 練習画面ローディング中 */}
+        {pageState === "practice" && !currentExercise && (
+          <div className="flex-1 flex items-center justify-center py-4">
+            <div className="w-full max-w-lg space-y-4">
+              <CardSkeleton />
+              <CardSkeleton />
             </div>
           </div>
         )}

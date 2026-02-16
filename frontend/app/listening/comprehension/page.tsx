@@ -15,6 +15,14 @@ import {
 } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import ComprehensionQuiz from "@/components/listening/ComprehensionQuiz";
+import {
+  api,
+  ComprehensionMaterial,
+  ComprehensionQuestion as ApiComprehensionQuestion,
+  SummaryResult,
+} from "@/lib/api";
+import { useToastStore } from "@/lib/stores/toast-store";
+import { CardSkeleton } from "@/components/ui/Skeleton";
 
 /**
  * リスニングコンプリヘンションページ
@@ -48,13 +56,13 @@ const TOPICS = [
 ];
 
 const DURATIONS = [
-  { id: "short", label: "Short", labelJa: "短い", minutes: "1-2 min" },
-  { id: "medium", label: "Medium", labelJa: "中程度", minutes: "3-5 min" },
-  { id: "long", label: "Long", labelJa: "長い", minutes: "5-10 min" },
+  { id: "short", label: "Short", labelJa: "短い", minutes: "1-2 min", durationMinutes: 1 },
+  { id: "medium", label: "Medium", labelJa: "中程度", minutes: "3-5 min", durationMinutes: 3 },
+  { id: "long", label: "Long", labelJa: "長い", minutes: "5-10 min", durationMinutes: 7 },
 ];
 
-// デモ用の問題データ
-const DEMO_QUESTIONS: Question[] = [
+// フォールバック用のデモ問題データ（API失敗時に使用）
+const FALLBACK_QUESTIONS: Question[] = [
   {
     id: "q1",
     text: "What was the main topic of the discussion?",
@@ -122,7 +130,7 @@ const DEMO_QUESTIONS: Question[] = [
   },
 ];
 
-const KEY_POINTS = [
+const FALLBACK_KEY_POINTS = [
   "New product launch planned for September",
   "Supply chain concerns identified",
   "Multiple supplier strategy agreed",
@@ -130,12 +138,31 @@ const KEY_POINTS = [
   "Progress reports due bi-weekly",
 ];
 
-const VOCABULARY_REVIEW = [
+const FALLBACK_VOCABULARY = [
   { word: "finalize", definition: "最終的に決定する", context: "We need everything finalized by September." },
   { word: "disruption", definition: "混乱、中断", context: "Potential supply chain disruptions." },
   { word: "mitigation", definition: "軽減、緩和", context: "As a mitigation strategy." },
   { word: "diversify", definition: "多様化する", context: "Diversify our supplier base." },
 ];
+
+/**
+ * APIのComprehensionQuestionをUI用のQuestion型に変換
+ */
+function mapApiQuestion(apiQ: ApiComprehensionQuestion, index: number): Question {
+  // API optionsがnullの場合はフォールバック
+  const options = apiQ.options || ["Option A", "Option B", "Option C", "Option D"];
+  // correct_answerからcorrectIndexを導出
+  const correctIndex = options.findIndex(
+    (opt) => opt.toLowerCase().trim() === apiQ.correct_answer.toLowerCase().trim()
+  );
+  return {
+    id: apiQ.question_id,
+    text: apiQ.question_text,
+    options,
+    correctIndex: correctIndex >= 0 ? correctIndex : 0,
+    explanation: `The correct answer is: ${apiQ.correct_answer}`,
+  };
+}
 
 export default function ComprehensionPage() {
   const [pageState, setPageState] = useState<PageState>("setup");
@@ -148,13 +175,87 @@ export default function ComprehensionPage() {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [summaryText, setSummaryText] = useState("");
   const [summaryScore, setSummaryScore] = useState<number | null>(null);
+  const [summaryFeedback, setSummaryFeedback] = useState<string | null>(null);
+  const [summaryKeyPointsCovered, setSummaryKeyPointsCovered] = useState<string[]>([]);
+  const [summaryKeyPointsMissed, setSummaryKeyPointsMissed] = useState<string[]>([]);
+  const [isLoadingStart, setIsLoadingStart] = useState(false);
+  const [isSubmittingSummary, setIsSubmittingSummary] = useState(false);
+  // APIから取得した素材データ
+  const [material, setMaterial] = useState<ComprehensionMaterial | null>(null);
+  // 表示用のクイズ問題（APIまたはフォールバック）
+  const [questions, setQuestions] = useState<Question[]>(FALLBACK_QUESTIONS);
+  // 表示用のキーポイント・語彙
+  const [keyPoints, setKeyPoints] = useState<string[]>(FALLBACK_KEY_POINTS);
+  const [vocabulary, setVocabulary] = useState<
+    { word: string; definition: string; context: string }[]
+  >(FALLBACK_VOCABULARY);
+
+  const addToast = useToastStore((s) => s.addToast);
 
   // リスニング開始
-  const handleStartListening = useCallback(() => {
-    setPageState("listening");
+  const handleStartListening = useCallback(async () => {
+    setIsLoadingStart(true);
     setListeningProgress(0);
     setNotes("");
-  }, []);
+
+    const durationMinutes =
+      DURATIONS.find((d) => d.id === selectedDuration)?.durationMinutes || 3;
+
+    try {
+      // APIからコンプリヘンション素材を取得
+      const mat: ComprehensionMaterial = await api.getComprehensionMaterial(
+        selectedTopic,
+        difficulty,
+        durationMinutes
+      );
+      setMaterial(mat);
+
+      // 素材のキーポイント・語彙を設定
+      if (mat.key_points && mat.key_points.length > 0) {
+        setKeyPoints(mat.key_points);
+      } else {
+        setKeyPoints(FALLBACK_KEY_POINTS);
+      }
+      if (mat.vocabulary && mat.vocabulary.length > 0) {
+        setVocabulary(
+          mat.vocabulary.map((v) => ({
+            word: v.word,
+            definition: v.definition,
+            context: v.example,
+          }))
+        );
+      } else {
+        setVocabulary(FALLBACK_VOCABULARY);
+      }
+
+      // APIからクイズ問題を取得
+      try {
+        const apiQuestions = await api.getComprehensionQuestions(mat.text, 5);
+        if (apiQuestions.length > 0) {
+          setQuestions(apiQuestions.map(mapApiQuestion));
+        } else {
+          setQuestions(FALLBACK_QUESTIONS);
+        }
+      } catch (qErr) {
+        console.error("Failed to load comprehension questions:", qErr);
+        addToast("warning", "クイズ問題の取得に失敗。デモ問題を使用します。");
+        setQuestions(FALLBACK_QUESTIONS);
+      }
+
+      setPageState("listening");
+    } catch (err) {
+      // 素材取得自体が失敗
+      console.error("Failed to load comprehension material from API:", err);
+      addToast("error", "APIからデータを取得できませんでした。デモデータを使用します。");
+      setMaterial(null);
+      setQuestions(FALLBACK_QUESTIONS);
+      setKeyPoints(FALLBACK_KEY_POINTS);
+      setVocabulary(FALLBACK_VOCABULARY);
+      setPageState("listening");
+    } finally {
+      setIsLoadingStart(false);
+    }
+  }, [selectedTopic, difficulty, selectedDuration, addToast]);
 
   // 音声再生/一時停止
   const handleTogglePlay = useCallback(() => {
@@ -188,13 +289,39 @@ export default function ComprehensionPage() {
   }, []);
 
   // サマリー送信
-  const handleSubmitSummary = useCallback(() => {
-    // デモ：サマリースコア計算
-    const words = summaryText.trim().split(/\s+/).length;
-    const score = Math.min(100, Math.round(words * 3 + Math.random() * 20));
-    setSummaryScore(score);
-    setPageState("result");
-  }, [summaryText]);
+  const handleSubmitSummary = useCallback(async () => {
+    setIsSubmittingSummary(true);
+    try {
+      if (material) {
+        // APIでサマリーを評価
+        const result: SummaryResult = await api.checkSummary(
+          material.material_id,
+          summaryText.trim()
+        );
+        setSummaryScore(result.score);
+        setSummaryFeedback(result.feedback);
+        setSummaryKeyPointsCovered(result.key_points_covered);
+        setSummaryKeyPointsMissed(result.key_points_missed);
+      } else {
+        // materialがない場合（フォールバックモード）はローカル計算
+        throw new Error("No material data for API summary check");
+      }
+      setPageState("result");
+    } catch (err) {
+      // API失敗時はローカルスコア計算でフォールバック
+      console.error("Failed to check summary via API:", err);
+      addToast("error", "サマリー評価に失敗しました。ローカルスコアを表示します。");
+      const words = summaryText.trim().split(/\s+/).length;
+      const score = Math.min(100, Math.round(words * 3 + Math.random() * 20));
+      setSummaryScore(score);
+      setSummaryFeedback(null);
+      setSummaryKeyPointsCovered([]);
+      setSummaryKeyPointsMissed([]);
+      setPageState("result");
+    } finally {
+      setIsSubmittingSummary(false);
+    }
+  }, [summaryText, material, addToast]);
 
   // リスタート
   const handleRestart = useCallback(() => {
@@ -203,7 +330,14 @@ export default function ComprehensionPage() {
     setNotes("");
     setSummaryText("");
     setSummaryScore(null);
+    setSummaryFeedback(null);
+    setSummaryKeyPointsCovered([]);
+    setSummaryKeyPointsMissed([]);
     setListeningProgress(0);
+    setMaterial(null);
+    setQuestions(FALLBACK_QUESTIONS);
+    setKeyPoints(FALLBACK_KEY_POINTS);
+    setVocabulary(FALLBACK_VOCABULARY);
   }, []);
 
   // クイズスコア計算
@@ -317,10 +451,15 @@ export default function ComprehensionPage() {
             {/* 開始ボタン */}
             <button
               onClick={handleStartListening}
-              className="w-full py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-500 transition-colors flex items-center justify-center gap-2"
+              disabled={isLoadingStart}
+              className="w-full py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-500 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
-              <Headphones className="w-4 h-4" />
-              Start Listening
+              {isLoadingStart ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Headphones className="w-4 h-4" />
+              )}
+              {isLoadingStart ? "Loading..." : "Start Listening"}
             </button>
           </div>
         )}
@@ -418,7 +557,7 @@ export default function ComprehensionPage() {
               </p>
             </div>
             <ComprehensionQuiz
-              questions={DEMO_QUESTIONS}
+              questions={questions}
               onComplete={handleQuizComplete}
             />
           </div>
@@ -444,6 +583,7 @@ export default function ComprehensionPage() {
                 rows={6}
                 className="w-full px-4 py-3 rounded-xl bg-[var(--color-bg-input)] border border-[var(--color-border)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors resize-none"
                 autoFocus
+                disabled={isSubmittingSummary}
               />
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-[var(--color-text-muted)]">
@@ -451,10 +591,14 @@ export default function ComprehensionPage() {
                 </span>
                 <button
                   onClick={handleSubmitSummary}
-                  disabled={summaryText.trim().length < 10}
+                  disabled={summaryText.trim().length < 10 || isSubmittingSummary}
                   className="px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-500 disabled:opacity-50 transition-colors flex items-center gap-2"
                 >
-                  <Send className="w-4 h-4" />
+                  {isSubmittingSummary ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
                   Submit
                 </button>
               </div>
@@ -464,6 +608,9 @@ export default function ComprehensionPage() {
             <button
               onClick={() => {
                 setSummaryScore(0);
+                setSummaryFeedback(null);
+                setSummaryKeyPointsCovered([]);
+                setSummaryKeyPointsMissed([]);
                 setPageState("result");
               }}
               className="w-full py-2 text-xs text-[var(--color-text-muted)] hover:text-primary transition-colors"
@@ -517,7 +664,7 @@ export default function ComprehensionPage() {
 
             {/* サマリースコア */}
             {summaryScore !== null && summaryScore > 0 && (
-              <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-5">
+              <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-5 space-y-3">
                 <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">
                   Summary Evaluation
                 </p>
@@ -537,6 +684,46 @@ export default function ComprehensionPage() {
                     {summaryScore}%
                   </span>
                 </div>
+                {/* APIフィードバックがある場合は表示 */}
+                {summaryFeedback && (
+                  <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed mt-2">
+                    {summaryFeedback}
+                  </p>
+                )}
+                {/* カバーしたキーポイント */}
+                {summaryKeyPointsCovered.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs font-semibold text-green-400 mb-1">
+                      Covered Key Points:
+                    </p>
+                    {summaryKeyPointsCovered.map((point, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]"
+                      >
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
+                        {point}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* 見逃したキーポイント */}
+                {summaryKeyPointsMissed.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs font-semibold text-warning mb-1">
+                      Missed Key Points:
+                    </p>
+                    {summaryKeyPointsMissed.map((point, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]"
+                      >
+                        <div className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
+                        {point}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -545,7 +732,7 @@ export default function ComprehensionPage() {
               <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                 Key Points
               </p>
-              {KEY_POINTS.map((point, i) => (
+              {keyPoints.map((point, i) => (
                 <div
                   key={i}
                   className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]"
@@ -561,7 +748,7 @@ export default function ComprehensionPage() {
               <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                 Vocabulary Review
               </p>
-              {VOCABULARY_REVIEW.map((item, i) => (
+              {vocabulary.map((item, i) => (
                 <div
                   key={i}
                   className="p-3 rounded-xl bg-[var(--color-bg-primary)]/50 space-y-1"

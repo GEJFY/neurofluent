@@ -37,7 +37,7 @@ LLM 抽象化レイヤー、データベース設計、認証フロー、セキ�
 |  |                                                                |   |
 |  |  +------------------+  +------------------+  +--------------+ |   |
 |  |  | Routers          |  | Services         |  | Prompts      | |   |
-|  |  | (13 ルーター)     |  | (10 サービス)    |  | (8 テンプレ) | |   |
+|  |  | (14 ルーター)     |  | (10 サービス)    |  | (8 テンプレ) | |   |
 |  |  +------------------+  +------------------+  +--------------+ |   |
 |  |                                                                |   |
 |  |  +------------------+  +------------------+  +--------------+ |   |
@@ -82,22 +82,38 @@ LLM 抽象化レイヤー、データベース設計、認証フロー、セキ�
 
 ```text
 app/
-  layout.tsx              # ルートレイアウト (AppShell)
-  page.tsx                # ダッシュボード (ホーム)
-  login/page.tsx          # ログインページ
-  talk/page.tsx           # AI フリートーク
-  talk/review/[id]/       # セッションレビュー
-  speaking/flash/page.tsx # 瞬間英作文
-  review/page.tsx         # FSRS 復習
+  layout.tsx                          # ルートレイアウト (AppShell + Toast)
+  page.tsx                            # ダッシュボード (ホーム)
+  login/page.tsx                      # ログインページ
+  talk/page.tsx                       # AI フリートーク
+  talk/review/[id]/                   # セッションレビュー
+  speaking/page.tsx                   # Speaking ハブ (Flash, Pattern, Pronunciation)
+  speaking/flash/page.tsx             # 瞬間英作文
+  speaking/pattern/page.tsx           # パターン練習
+  speaking/pronunciation/page.tsx     # 発音練習
+  listening/page.tsx                  # Listening ハブ (Shadowing, Mogomogo, Comprehension)
+  listening/shadowing/page.tsx        # シャドーイング
+  listening/mogomogo/page.tsx         # モゴモゴ英語
+  listening/comprehension/page.tsx    # 理解度テスト
+  review/page.tsx                     # FSRS 復習
+  analytics/page.tsx                  # 学習分析
+  subscription/page.tsx               # サブスクリプション管理
 
 components/
   chat/                   # チャット UI (ChatWindow, MessageBubble, FeedbackPanel)
   drill/                  # ドリル UI (FlashCard, ReviewCard)
   layout/                 # レイアウト (AppShell, Sidebar, BottomNav)
+  subscription/           # サブスク UI (PlanCard)
+  ui/                     # 共通 UI (Toast, Skeleton)
 
 lib/
-  api.ts                  # API クライアント
-  stores/                 # Zustand ストア (auth-store, talk-store)
+  api.ts                  # API クライアント (全エンドポイント対応)
+  hooks/
+    useApiData.ts         # 共通データフェッチフック (ローディング/エラー/フォールバック)
+  stores/
+    auth-store.ts         # 認証状態管理
+    talk-store.ts         # 会話セッション管理
+    toast-store.ts        # Toast 通知状態管理
 ```
 
 ### Backend
@@ -123,7 +139,7 @@ backend/app/
   exceptions.py         # AppError 例外階層
   logging_config.py     # structlog 初期化
 
-  routers/              # API ルーター (13個)
+  routers/              # API ルーター (14個)
     health.py           #   /health
     auth.py             #   /api/auth/*
     talk.py             #   /api/talk/*

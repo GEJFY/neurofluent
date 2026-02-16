@@ -1,7 +1,7 @@
 # FluentEdge AI API リファレンス
 
 FluentEdge AI バックエンド API の全エンドポイント仕様書です。
-12 機能・40 以上のエンドポイントを網羅しています。
+12 機能・50 近いエンドポイントを網羅しています。
 
 - **ベース URL (開発)**: `http://localhost:8000`
 - **ベース URL (本番)**: `https://api.fluentedge.ai`
@@ -389,6 +389,14 @@ WebSocket 音声ストリーム。バイナリ (音声チャンク) でリアル
 
 ---
 
+### `GET /api/speaking/pattern/progress`
+
+パターン習熟度の進捗を取得。認証必須。
+
+**レスポンス** `200 OK`: カテゴリ別の習熟ステージ (understood → drilling → acquired)、正答率、練習回数
+
+---
+
 ## Speaking Pronunciation -- 発音練習
 
 ### `GET /api/speaking/pronunciation/phonemes`
@@ -416,12 +424,36 @@ WebSocket 音声ストリーム。バイナリ (音声チャンク) でリアル
 
 発音を評価 (Azure Speech Services 連携)。認証必須。
 
-**リクエスト**:
+**リクエスト** (`multipart/form-data`):
 
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
-| `audio_data` | string | Yes | 音声データ (Base64) |
+| `audio` | file | Yes | 音声ファイル |
+| `target_phoneme` | string | Yes | 対象音素 |
 | `reference_text` | string | Yes | 参照テキスト |
+
+---
+
+### `GET /api/speaking/pronunciation/prosody/exercises`
+
+プロソディ (韻律) 練習問題を取得。認証必須。
+
+**クエリパラメータ**:
+
+| パラメータ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `pattern` | string | No | 韻律パターン |
+| `count` | int | No | 問題数 |
+
+**レスポンス** `200 OK`: イントネーション・ストレス・リズムの練習問題
+
+---
+
+### `GET /api/speaking/pronunciation/progress`
+
+音素別の発音進捗データを取得。認証必須。
+
+**レスポンス** `200 OK`: 各音素の正答率、練習回数、習熟度
 
 ---
 
@@ -445,12 +477,26 @@ WebSocket 音声ストリーム。バイナリ (音声チャンク) でリアル
 
 シャドーイング音声を評価。認証必須。
 
-**リクエスト**:
+**リクエスト** (`multipart/form-data`):
 
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
-| `material_id` | string | Yes | 素材 ID |
-| `audio_data` | string | Yes | 音声データ (Base64) |
+| `audio` | file | Yes | 音声ファイル |
+| `reference_text` | string | Yes | 参照テキスト |
+| `speed` | float | No | 再生速度 |
+
+---
+
+### `GET /api/listening/shadowing/history`
+
+シャドーイング練習履歴を取得。認証必須。
+
+**クエリパラメータ**:
+
+| パラメータ | 型 | デフォルト | 説明 |
+| --- | --- | --- | --- |
+| `offset` | int | 0 | スキップ数 |
+| `limit` | int | 20 | 取得数 |
 
 ---
 
@@ -472,52 +518,99 @@ WebSocket 音声ストリーム。バイナリ (音声チャンク) でリアル
 
 ## Listening Mogomogo -- モゴモゴ英語
 
-### `GET /api/listening/mogomogo`
+### `GET /api/listening/mogomogo/patterns`
 
-モゴモゴ英語素材一覧。認証必須。
+モゴモゴ英語の音声変化パターン一覧を取得。認証必須。
 
-**レスポンス** `200 OK`: リンキング、リダクション等の音声変化パターン素材
-
----
-
-### `POST /api/listening/mogomogo/evaluate`
-
-モゴモゴ練習の評価。認証必須。
-
-**リクエスト**:
-
-| フィールド | 型 | 必須 | 説明 |
-| --- | --- | --- | --- |
-| `pattern_id` | string | Yes | パターン ID |
-| `user_answer` | string | Yes | ユーザー回答 |
+**レスポンス** `200 OK`: リンキング、リダクション等のパターン種別一覧
 
 ---
 
-## Listening Comprehension -- 理解度テスト
+### `GET /api/listening/mogomogo/exercises`
 
-### `GET /api/listening/comprehension`
-
-リスニング理解度テストを生成。認証必須。
+モゴモゴ英語練習問題を生成。認証必須。
 
 **クエリパラメータ**:
 
 | パラメータ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
-| `level` | string | No | 難易度 |
-| `topic` | string | No | トピック |
+| `pattern_types` | string | No | パターン種別 (カンマ区切り) |
+| `count` | int | No | 問題数 |
 
 ---
 
-### `POST /api/listening/comprehension/check`
+### `POST /api/listening/mogomogo/dictation/check`
 
-理解度テスト回答を送信。認証必須。
+ディクテーション回答を評価。認証必須。
 
 **リクエスト**:
 
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
-| `test_id` | string | Yes | テスト ID |
-| `answers` | array | Yes | 回答配列 |
+| `exercise_id` | string | Yes | エクササイズ ID |
+| `user_text` | string | Yes | ユーザーの書き取りテキスト |
+| `original_text` | string | Yes | 元のテキスト |
+
+---
+
+### `GET /api/listening/mogomogo/progress`
+
+モゴモゴ英語の学習進捗を取得。認証必須。
+
+---
+
+## Listening Comprehension -- 理解度テスト
+
+### `GET /api/listening/comprehension/material`
+
+リスニング理解度テスト用の素材を生成。認証必須。
+
+**クエリパラメータ**:
+
+| パラメータ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `topic` | string | No | トピック |
+| `difficulty` | string | No | 難易度 |
+| `duration_minutes` | int | No | 所要時間 (分) |
+
+---
+
+### `GET /api/listening/comprehension/material/questions`
+
+素材に基づく質問を生成。認証必須。
+
+**クエリパラメータ**:
+
+| パラメータ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `text` | string | Yes | 素材テキスト |
+| `count` | int | No | 質問数 |
+
+---
+
+### `POST /api/listening/comprehension/answer`
+
+理解度テスト回答を送信・評価。認証必須。
+
+**リクエスト**:
+
+| フィールド | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `question_id` | string | Yes | 質問 ID |
+| `selected_answer` | string | Yes | 選択した回答 |
+
+---
+
+### `POST /api/listening/comprehension/summary`
+
+要約を評価。認証必須。
+
+**リクエスト**:
+
+| フィールド | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `material_id` | string | Yes | 素材 ID |
+| `summary_text` | string | Yes | ユーザーの要約テキスト |
 
 ---
 
@@ -627,23 +720,84 @@ WebSocket 音声ストリーム。バイナリ (音声チャンク) でリアル
 
 ---
 
-### `GET /api/analytics/advanced`
+### `GET /api/analytics/advanced/skills`
 
-高度な分析データ (スキルレーダー、弱点分析等)。認証必須。
+スキル別の詳細分析データを取得。認証必須。
 
-**レスポンス** `200 OK`: スキル別スコア、弱点パターン、上達トレンド
+**レスポンス** `200 OK`:
+
+```json
+{
+  "skills": [
+    {"skill": "grammar", "score": 0.82, "trend": "improving"},
+    {"skill": "vocabulary", "score": 0.75, "trend": "stable"},
+    {"skill": "pronunciation", "score": 0.68, "trend": "improving"},
+    {"skill": "listening", "score": 0.71, "trend": "declining"},
+    {"skill": "fluency", "score": 0.79, "trend": "improving"}
+  ]
+}
+```
 
 ---
 
-### `GET /api/analytics/advanced/report/weekly`
+### `GET /api/analytics/advanced/weekly-report`
 
 週次レポートを生成。認証必須。
 
+**レスポンス** `200 OK`: 今週の学習サマリー、スキル変化、おすすめアクション
+
 ---
 
-### `GET /api/analytics/advanced/report/monthly`
+### `GET /api/analytics/advanced/monthly-report`
 
 月次レポートを生成。認証必須。
+
+**レスポンス** `200 OK`: 月間の学習統計、目標達成度、スキル成長グラフデータ
+
+---
+
+### `GET /api/analytics/advanced/pronunciation-progress`
+
+発音の音素別進捗データを取得。認証必須。
+
+**レスポンス** `200 OK`: 各音素 (L/R, TH, V/B 等) の正答率・練習回数
+
+---
+
+### `GET /api/analytics/advanced/recommendations`
+
+AI による学習レコメンデーションを取得。認証必須。
+
+**レスポンス** `200 OK`:
+
+```json
+{
+  "recommendations": [
+    {
+      "type": "focus_skill",
+      "title": "リスニング強化",
+      "description": "リスニングスコアが低下傾向です。シャドーイングを増やしましょう。",
+      "priority": "high"
+    }
+  ]
+}
+```
+
+---
+
+### `GET /api/analytics/advanced/daily-menu`
+
+今日の最適化された学習メニューを取得。認証必須。
+
+**レスポンス** `200 OK`: ユーザーの弱点・進捗に基づく推奨学習項目リスト
+
+---
+
+### `GET /api/analytics/advanced/focus-areas`
+
+ベイジアン知識モデルに基づくフォーカスエリアを取得。認証必須。
+
+**レスポンス** `200 OK`: 重点学習すべきスキル・パターンの一覧
 
 ---
 
@@ -799,22 +953,34 @@ Stripe から以下のイベントを処理:
 | `GET` | `/api/speaking/pattern/categories` | Yes | パターンカテゴリ |
 | `GET` | `/api/speaking/pattern/exercises` | Yes | パターン問題 |
 | `POST` | `/api/speaking/pattern/check` | Yes | パターン評価 |
+| `GET` | `/api/speaking/pattern/progress` | Yes | パターン習熟度 |
 | `GET` | `/api/speaking/pronunciation/phonemes` | Yes | 音素一覧 |
 | `GET` | `/api/speaking/pronunciation/exercises` | Yes | 発音問題 |
 | `POST` | `/api/speaking/pronunciation/evaluate` | Yes | 発音評価 |
+| `GET` | `/api/speaking/pronunciation/prosody/exercises` | Yes | プロソディ問題 |
+| `GET` | `/api/speaking/pronunciation/progress` | Yes | 発音進捗 |
 | `GET` | `/api/listening/shadowing/material` | Yes | シャドーイング素材 |
 | `POST` | `/api/listening/shadowing/evaluate` | Yes | シャドーイング評価 |
+| `GET` | `/api/listening/shadowing/history` | Yes | シャドーイング履歴 |
 | `POST` | `/api/listening/tts` | Yes | テキスト音声変換 |
-| `GET` | `/api/listening/mogomogo` | Yes | モゴモゴ素材 |
-| `POST` | `/api/listening/mogomogo/evaluate` | Yes | モゴモゴ評価 |
-| `GET` | `/api/listening/comprehension` | Yes | 理解度テスト |
-| `POST` | `/api/listening/comprehension/check` | Yes | 理解度回答 |
+| `GET` | `/api/listening/mogomogo/patterns` | Yes | モゴモゴパターン一覧 |
+| `GET` | `/api/listening/mogomogo/exercises` | Yes | モゴモゴ問題生成 |
+| `POST` | `/api/listening/mogomogo/dictation/check` | Yes | ディクテーション評価 |
+| `GET` | `/api/listening/mogomogo/progress` | Yes | モゴモゴ進捗 |
+| `GET` | `/api/listening/comprehension/material` | Yes | 理解度テスト素材 |
+| `GET` | `/api/listening/comprehension/material/questions` | Yes | 理解度質問生成 |
+| `POST` | `/api/listening/comprehension/answer` | Yes | 理解度回答 |
+| `POST` | `/api/listening/comprehension/summary` | Yes | 要約評価 |
 | `GET` | `/api/review/due` | Yes | 復習対象取得 |
 | `POST` | `/api/review/complete` | Yes | 復習完了 |
 | `GET` | `/api/analytics/dashboard` | Yes | ダッシュボード統計 |
-| `GET` | `/api/analytics/advanced` | Yes | 高度な分析 |
-| `GET` | `/api/analytics/advanced/report/weekly` | Yes | 週次レポート |
-| `GET` | `/api/analytics/advanced/report/monthly` | Yes | 月次レポート |
+| `GET` | `/api/analytics/advanced/skills` | Yes | スキル分析 |
+| `GET` | `/api/analytics/advanced/weekly-report` | Yes | 週次レポート |
+| `GET` | `/api/analytics/advanced/monthly-report` | Yes | 月次レポート |
+| `GET` | `/api/analytics/advanced/pronunciation-progress` | Yes | 発音進捗分析 |
+| `GET` | `/api/analytics/advanced/recommendations` | Yes | 学習レコメンド |
+| `GET` | `/api/analytics/advanced/daily-menu` | Yes | デイリーメニュー |
+| `GET` | `/api/analytics/advanced/focus-areas` | Yes | フォーカスエリア |
 | `GET` | `/api/subscription/plans` | Yes | プラン一覧 |
 | `GET` | `/api/subscription/current` | Yes | 現在のプラン |
 | `POST` | `/api/subscription/checkout` | Yes | チェックアウト |

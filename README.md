@@ -284,7 +284,7 @@ neurofluent/
 │   ├── alembic/versions/           # マイグレーションファイル
 │   ├── tests/                      # pytest テスト
 │   └── app/
-│       ├── main.py                 # FastAPI エントリポイント（13ルーター登録）
+│       ├── main.py                 # FastAPI エントリポイント（14ルーター登録）
 │       ├── config.py               # pydantic-settings 環境設定
 │       ├── database.py             # SQLAlchemy async エンジン・セッション
 │       ├── dependencies.py         # JWT 認証ディペンデンシー
@@ -332,10 +332,10 @@ neurofluent/
 │   ├── package.json                # Next.js 15 / React 19 / Zustand 5
 │   ├── Dockerfile                  # Node.js 20 ベースイメージ
 │   ├── vitest.config.ts            # Vitest テスト設定
-│   ├── __tests__/                  # フロントエンドテスト
-│   ├── app/                        # Next.js App Router ページ
-│   ├── components/                 # UIコンポーネント
-│   └── lib/                        # API クライアント / Zustand ストア
+│   ├── __tests__/                  # フロントエンドテスト (16ファイル)
+│   ├── app/                        # Next.js App Router ページ (16ページ)
+│   ├── components/                 # UIコンポーネント (chat, drill, layout, subscription, ui)
+│   └── lib/                        # API クライアント / Zustand ストア / hooks
 │
 ├── infra/                          # IaC（Infrastructure as Code）
 │   ├── bicep/                      # Azure Bicep テンプレート
@@ -364,7 +364,7 @@ neurofluent/
 
 ## API エンドポイント概要
 
-全40+エンドポイントを13ルーターで提供しています。
+約50エンドポイントを14ルーターで提供しています。
 
 | カテゴリ | プレフィックス | 主要機能 | Phase |
 | --- | --- | --- | --- |
@@ -511,7 +511,7 @@ terraform apply -var="cloud_provider=gcp" -var="environment=dev"
 | --- | --- |
 | [セットアップガイド](docs/setup-guide.md) | ローカル開発環境の構築手順（全LLMプロバイダー対応） |
 | [運用マニュアル](docs/operation-manual.md) | 12機能の使い方と管理者向け操作 |
-| [API リファレンス](docs/api-reference.md) | 全40+エンドポイントの詳細仕様 |
+| [API リファレンス](docs/api-reference.md) | 全50近いエンドポイントの詳細仕様 |
 | [デプロイメントガイド](docs/deployment-guide.md) | Docker Compose / Terraform マルチクラウドデプロイ |
 | [ユーザーマニュアル](docs/user-manual.md) | エンドユーザー向け全機能ガイド |
 | [アーキテクチャ設計書](docs/architecture.md) | システム構成・LLM抽象化・データフロー |

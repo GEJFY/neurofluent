@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import ToastContainer from "@/components/ui/Toast";
 
 /**
  * FluentEdge AI - ルートレイアウト
@@ -31,6 +32,7 @@ export default function RootLayout({
     <html lang="ja" className="dark">
       <body className="font-body antialiased bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
         {children}
+        <ToastContainer />
       </body>
     </html>
   );

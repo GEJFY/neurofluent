@@ -14,6 +14,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
+import { api, MogomogoExercise, DictationResult } from "@/lib/api";
+import { useToastStore } from "@/lib/stores/toast-store";
+import { CardSkeleton } from "@/components/ui/Skeleton";
 
 /**
  * もごもごイングリッシュページ
@@ -38,6 +41,16 @@ interface ExerciseResult {
   pattern: string;
   patternExplanation: string;
   ipa: string;
+  missedPatterns: string[];
+}
+
+// APIから取得した問題をUI用にマッピングしたデータ型
+interface MappedExercise {
+  id: string;
+  pattern: string;
+  original: string;
+  ipa: string;
+  patternExplanation: string;
   missedPatterns: string[];
 }
 
@@ -79,8 +92,8 @@ const PATTERN_TYPES: PatternType[] = [
   },
 ];
 
-// デモ用の問題データ
-const DEMO_EXERCISES = [
+// フォールバック用のデモ問題データ（API失敗時に使用）
+const FALLBACK_EXERCISES: MappedExercise[] = [
   {
     id: "1",
     pattern: "linking",
@@ -128,6 +141,20 @@ const DEMO_EXERCISES = [
   },
 ];
 
+/**
+ * APIレスポンスのMogomogoExerciseをUI用MappedExerciseに変換
+ */
+function mapApiExercise(apiExercise: MogomogoExercise): MappedExercise {
+  return {
+    id: apiExercise.exercise_id,
+    pattern: apiExercise.pattern_type,
+    original: apiExercise.audio_text,
+    ipa: apiExercise.ipa_modified || apiExercise.ipa_original,
+    patternExplanation: apiExercise.explanation,
+    missedPatterns: [], // APIの結果でdictation check時に埋まる
+  };
+}
+
 export default function MogomogoPage() {
   const [pageState, setPageState] = useState<PageState>("setup");
   const [selectedPatterns, setSelectedPatterns] = useState<string[]>([
@@ -141,11 +168,11 @@ export default function MogomogoPage() {
   const [results, setResults] = useState<ExerciseResult[]>([]);
   const [showFinalResult, setShowFinalResult] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-
-  // 使用する練習問題をフィルタリング
-  const exercises = DEMO_EXERCISES.filter((e) =>
-    selectedPatterns.includes(e.pattern)
-  ).slice(0, exerciseCount);
+  const [isLoadingExercises, setIsLoadingExercises] = useState(false);
+  const [isCheckingAnswer, setIsCheckingAnswer] = useState(false);
+  // APIまたはフォールバックから取得した問題リスト
+  const [exercises, setExercises] = useState<MappedExercise[]>([]);
+  const addToast = useToastStore((s) => s.addToast);
 
   const currentExercise = exercises[currentIndex];
 
@@ -160,17 +187,54 @@ export default function MogomogoPage() {
     });
   }, []);
 
+  // フォールバック問題をフィルタリングして取得
+  const getFallbackExercises = useCallback(
+    (patterns: string[], count: number): MappedExercise[] => {
+      return FALLBACK_EXERCISES.filter((e) =>
+        patterns.includes(e.pattern)
+      ).slice(0, count);
+    },
+    []
+  );
+
   // 開始
-  const handleStart = useCallback(() => {
-    if (exercises.length === 0) return;
+  const handleStart = useCallback(async () => {
+    setIsLoadingExercises(true);
     setCurrentIndex(0);
     setResults([]);
     setReplaysLeft(3);
     setHasListened(false);
     setUserInput("");
     setShowFinalResult(false);
-    setPageState("listening");
-  }, [exercises.length]);
+
+    try {
+      // APIからもごもご問題を取得
+      const patternTypesStr = selectedPatterns.join(",");
+      const apiExercises: MogomogoExercise[] = await api.getMogomogoExercises(
+        patternTypesStr,
+        exerciseCount
+      );
+      if (apiExercises.length === 0) {
+        throw new Error("No exercises returned from API");
+      }
+      setExercises(apiExercises.map(mapApiExercise));
+      setPageState("listening");
+    } catch (err) {
+      // API失敗時はフォールバックデータを使用
+      console.error("Failed to load mogomogo exercises from API:", err);
+      addToast("error", "APIからデータを取得できませんでした。デモデータを使用します。");
+      const fallback = getFallbackExercises(selectedPatterns, exerciseCount);
+      if (fallback.length === 0) {
+        addToast("error", "選択されたパターンのデモデータがありません。");
+        setIsLoadingExercises(false);
+        return;
+      }
+      setExercises(fallback);
+      setPageState("listening");
+    } finally {
+      setIsLoadingExercises(false);
+    }
+  }, [selectedPatterns, exerciseCount, addToast, getFallbackExercises]);
 
   // 音声再生（デモ）
   const handlePlay = useCallback(() => {
@@ -190,38 +254,67 @@ export default function MogomogoPage() {
   }, []);
 
   // 回答送信
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!currentExercise || !userInput.trim()) return;
 
-    const original = currentExercise.original.toLowerCase().trim();
-    const user = userInput.toLowerCase().trim();
-    const isCorrect = original === user;
-    const score = isCorrect
-      ? 100
-      : Math.max(
-          0,
-          Math.round(
-            (1 -
-              Math.abs(original.length - user.length) /
-                Math.max(original.length, 1)) *
-              70
-          )
-        );
+    setIsCheckingAnswer(true);
 
-    const result: ExerciseResult = {
-      original: currentExercise.original,
-      userText: userInput.trim(),
-      isCorrect,
-      score,
-      pattern: currentExercise.pattern,
-      patternExplanation: currentExercise.patternExplanation,
-      ipa: currentExercise.ipa,
-      missedPatterns: isCorrect ? [] : currentExercise.missedPatterns,
-    };
+    try {
+      // APIでディクテーション結果をチェック
+      const dictResult: DictationResult = await api.checkDictation(
+        currentExercise.id,
+        userInput.trim(),
+        currentExercise.original
+      );
+      const isCorrect = dictResult.accuracy >= 0.95;
+      const result: ExerciseResult = {
+        original: currentExercise.original,
+        userText: userInput.trim(),
+        isCorrect,
+        score: dictResult.score,
+        pattern: currentExercise.pattern,
+        patternExplanation: currentExercise.patternExplanation,
+        ipa: currentExercise.ipa,
+        missedPatterns: isCorrect ? [] : dictResult.missed_words,
+      };
+      setResults((prev) => [...prev, result]);
+      setPageState("result");
+    } catch (err) {
+      // API失敗時はローカルスコア計算でフォールバック
+      console.error("Failed to check dictation via API:", err);
+      addToast("error", "回答チェックに失敗しました。ローカル判定を使用します。");
 
-    setResults((prev) => [...prev, result]);
-    setPageState("result");
-  }, [currentExercise, userInput]);
+      const original = currentExercise.original.toLowerCase().trim();
+      const user = userInput.toLowerCase().trim();
+      const isCorrect = original === user;
+      const score = isCorrect
+        ? 100
+        : Math.max(
+            0,
+            Math.round(
+              (1 -
+                Math.abs(original.length - user.length) /
+                  Math.max(original.length, 1)) *
+                70
+            )
+          );
+
+      const result: ExerciseResult = {
+        original: currentExercise.original,
+        userText: userInput.trim(),
+        isCorrect,
+        score,
+        pattern: currentExercise.pattern,
+        patternExplanation: currentExercise.patternExplanation,
+        ipa: currentExercise.ipa,
+        missedPatterns: isCorrect ? [] : currentExercise.missedPatterns,
+      };
+      setResults((prev) => [...prev, result]);
+      setPageState("result");
+    } finally {
+      setIsCheckingAnswer(false);
+    }
+  }, [currentExercise, userInput, addToast]);
 
   // 次の問題へ
   const handleNext = useCallback(() => {
@@ -243,6 +336,7 @@ export default function MogomogoPage() {
     setResults([]);
     setShowFinalResult(false);
     setUserInput("");
+    setExercises([]);
   }, []);
 
   // パターン別スコア集計
@@ -264,6 +358,12 @@ export default function MogomogoPage() {
           results.reduce((s, r) => s + r.score, 0) / results.length
         )
       : 0;
+
+  // セットアップ画面の問題数プレビュー（フォールバックの数を使用）
+  const previewExerciseCount = getFallbackExercises(
+    selectedPatterns,
+    exerciseCount
+  ).length;
 
   return (
     <AppShell>
@@ -354,11 +454,17 @@ export default function MogomogoPage() {
             {/* 開始ボタン */}
             <button
               onClick={handleStart}
-              disabled={exercises.length === 0}
+              disabled={isLoadingExercises}
               className="w-full py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-500 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
-              <Headphones className="w-4 h-4" />
-              Start ({exercises.length} Questions)
+              {isLoadingExercises ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Headphones className="w-4 h-4" />
+              )}
+              {isLoadingExercises
+                ? "Loading..."
+                : `Start (${exerciseCount} Questions)`}
             </button>
           </div>
         )}
@@ -480,13 +586,18 @@ export default function MogomogoPage() {
                   placeholder="Type what you heard..."
                   className="flex-1 px-4 py-3 rounded-xl bg-[var(--color-bg-input)] border border-[var(--color-border)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
                   autoFocus
+                  disabled={isCheckingAnswer}
                 />
                 <button
                   onClick={handleSubmit}
-                  disabled={!userInput.trim()}
+                  disabled={!userInput.trim() || isCheckingAnswer}
                   className="px-4 py-3 rounded-xl bg-primary text-white hover:bg-primary-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
-                  <Send className="w-4 h-4" />
+                  {isCheckingAnswer ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>

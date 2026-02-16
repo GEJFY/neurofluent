@@ -138,20 +138,15 @@ describe('ApiClient', () => {
     })
 
     it('login成功時にトークンが保存される', async () => {
-      mockFetch
-        // login リクエスト
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          json: async () => ({
-            access_token: 'new-token-abc',
-            token_type: 'bearer',
-          }),
-        })
-        // getMe リクエスト（login内部でsetToken後に自動呼び出しはされないが、
-        // login自体がsetTokenを呼ぶ）
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          access_token: 'new-token-abc',
+          token_type: 'bearer',
+        }),
+      })
 
-      // loginはsetTokenを内部で呼ぶ
       const result = await api.login('test@example.com', 'password123')
 
       expect(result.access_token).toBe('new-token-abc')
@@ -163,50 +158,66 @@ describe('ApiClient', () => {
   })
 
   describe('Phase 2-4 APIメソッド', () => {
-    it('getShadowingMaterials メソッドが存在する', () => {
-      expect(typeof api.getShadowingMaterials).toBe('function')
+    it('getShadowingMaterial メソッドが存在する', () => {
+      expect(typeof api.getShadowingMaterial).toBe('function')
     })
 
     it('getPatternExercises メソッドが存在する', () => {
       expect(typeof api.getPatternExercises).toBe('function')
     })
 
-    it('startRealtimeSession メソッドが存在する', () => {
-      expect(typeof api.startRealtimeSession).toBe('function')
+    it('createRealtimeSession メソッドが存在する', () => {
+      expect(typeof api.createRealtimeSession).toBe('function')
     })
 
-    it('getRealtimeWebSocketUrl メソッドが存在する', () => {
-      expect(typeof api.getRealtimeWebSocketUrl).toBe('function')
+    it('getConversationModes メソッドが存在する', () => {
+      expect(typeof api.getConversationModes).toBe('function')
     })
 
-    it('getAdvancedAnalytics メソッドが存在する', () => {
-      expect(typeof api.getAdvancedAnalytics).toBe('function')
+    it('getSkillBreakdown メソッドが存在する', () => {
+      expect(typeof api.getSkillBreakdown).toBe('function')
     })
 
-    it('getSubscription メソッドが存在する', () => {
-      expect(typeof api.getSubscription).toBe('function')
+    it('getCurrentSubscription メソッドが存在する', () => {
+      expect(typeof api.getCurrentSubscription).toBe('function')
     })
 
     it('getPronunciationExercises メソッドが存在する', () => {
       expect(typeof api.getPronunciationExercises).toBe('function')
     })
 
-    it('getComprehensionExercises メソッドが存在する', () => {
-      expect(typeof api.getComprehensionExercises).toBe('function')
+    it('getComprehensionMaterial メソッドが存在する', () => {
+      expect(typeof api.getComprehensionMaterial).toBe('function')
     })
   })
 
-  describe('WebSocket URL生成', () => {
-    it('getRealtimeWebSocketUrlが正しいURLを生成する', () => {
-      ;(localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(
-        'test-token'
-      )
+  describe('新規APIメソッド', () => {
+    it('getPhonemes メソッドが存在する', () => {
+      expect(typeof api.getPhonemes).toBe('function')
+    })
 
-      const url = api.getRealtimeWebSocketUrl('session-123')
+    it('getMogomogoExercises メソッドが存在する', () => {
+      expect(typeof api.getMogomogoExercises).toBe('function')
+    })
 
-      expect(url).toContain('ws')
-      expect(url).toContain('session-123')
-      expect(url).toContain('token=test-token')
+    it('checkDictation メソッドが存在する', () => {
+      expect(typeof api.checkDictation).toBe('function')
+    })
+
+    it('getWeeklyReport メソッドが存在する', () => {
+      expect(typeof api.getWeeklyReport).toBe('function')
+    })
+
+    it('getRecommendations メソッドが存在する', () => {
+      expect(typeof api.getRecommendations).toBe('function')
+    })
+
+    it('getSubscriptionPlans メソッドが存在する', () => {
+      expect(typeof api.getSubscriptionPlans).toBe('function')
+    })
+
+    it('createCheckout メソッドが存在する', () => {
+      expect(typeof api.createCheckout).toBe('function')
     })
   })
 })

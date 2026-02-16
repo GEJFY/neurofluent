@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import FlashCard from '@/components/drill/FlashCard'
 import type { FlashExercise, FlashCheckResponse } from '@/lib/api'
 
@@ -32,6 +32,15 @@ const mockIncorrectResult: FlashCheckResponse = {
   corrected: 'He runs every day.',
   explanation: 'The verb form should be simple present for daily routines.',
   review_item_created: true,
+}
+
+/** カウントダウン (3→2→1→0) を完了させるヘルパー。チェーンされたsetTimeoutをact()で順に実行 */
+async function advanceCountdown() {
+  for (let i = 0; i < 4; i++) {
+    await act(async () => {
+      vi.advanceTimersByTime(1000)
+    })
+  }
 }
 
 describe('FlashCard', () => {
@@ -104,13 +113,11 @@ describe('FlashCard', () => {
     // カウントダウン中（初期値 3）
     expect(screen.getByText('3')).toBeInTheDocument()
 
-    // カウントダウンを進める
-    vi.advanceTimersByTime(3000)
+    // カウントダウンを完了させる
+    await advanceCountdown()
 
     // 入力フィールドが表示される
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText('Type your answer in English...')).toBeInTheDocument()
-    })
+    expect(screen.getByPlaceholderText('Type your answer in English...')).toBeInTheDocument()
   })
 
   it('回答送信後に結果が表示される（正解）', async () => {
@@ -128,11 +135,9 @@ describe('FlashCard', () => {
     )
 
     // カウントダウンを完了させる
-    vi.advanceTimersByTime(3000)
+    await advanceCountdown()
 
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText('Type your answer in English...')).toBeInTheDocument()
-    })
+    expect(screen.getByPlaceholderText('Type your answer in English...')).toBeInTheDocument()
 
     // 回答を入力して送信
     const input = screen.getByPlaceholderText('Type your answer in English...')
@@ -160,11 +165,9 @@ describe('FlashCard', () => {
     )
 
     // カウントダウンを完了させる
-    vi.advanceTimersByTime(3000)
+    await advanceCountdown()
 
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText('Type your answer in English...')).toBeInTheDocument()
-    })
+    expect(screen.getByPlaceholderText('Type your answer in English...')).toBeInTheDocument()
 
     // 回答を入力して送信
     const input = screen.getByPlaceholderText('Type your answer in English...')
@@ -192,11 +195,9 @@ describe('FlashCard', () => {
       />
     )
 
-    vi.advanceTimersByTime(3000)
+    await advanceCountdown()
 
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText('Type your answer in English...')).toBeInTheDocument()
-    })
+    expect(screen.getByPlaceholderText('Type your answer in English...')).toBeInTheDocument()
 
     const input = screen.getByPlaceholderText('Type your answer in English...')
     await user.type(input, 'He runs every day.')
@@ -221,11 +222,9 @@ describe('FlashCard', () => {
       />
     )
 
-    vi.advanceTimersByTime(3000)
+    await advanceCountdown()
 
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText('Type your answer in English...')).toBeInTheDocument()
-    })
+    expect(screen.getByPlaceholderText('Type your answer in English...')).toBeInTheDocument()
 
     const input = screen.getByPlaceholderText('Type your answer in English...')
     await user.type(input, 'He runs every day.')

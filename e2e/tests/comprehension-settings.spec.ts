@@ -2,6 +2,10 @@ import { test, expect } from '@playwright/test'
 import { loginAsMockUser } from './helpers/auth'
 import { mockComprehensionApi } from './helpers/api-mocks'
 
+// Comprehension ページは項目が多く、デスクトップでは固定サイドバーとボタンが重なるため
+// モバイルビューポートでテストする
+test.use({ viewport: { width: 390, height: 844 } })
+
 test.describe('Comprehension ページ - セットアップ画面', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsMockUser(page)
@@ -40,7 +44,6 @@ test.describe('Comprehension ページ - セットアップ画面', () => {
   test('アクセントを UK に切り替えできる', async ({ page }) => {
     await page.goto('/listening/comprehension')
     const ukButton = page.getByRole('button', { name: 'UK', exact: true })
-    await ukButton.scrollIntoViewIfNeeded()
     await ukButton.click()
     await expect(ukButton).toHaveClass(/border-primary/)
     // Any は非選択状態
@@ -63,7 +66,6 @@ test.describe('Comprehension ページ - セットアップ画面', () => {
   test('Multi-Speaker に切り替えできる', async ({ page }) => {
     await page.goto('/listening/comprehension')
     const multiButton = page.getByRole('button', { name: 'Multi-Speaker', exact: true })
-    await multiButton.scrollIntoViewIfNeeded()
     await multiButton.click()
     await expect(multiButton).toHaveClass(/border-primary/)
     // Single は非選択状態
@@ -94,7 +96,6 @@ test.describe('Comprehension ページ - セットアップ画面', () => {
   test('環境を Cafe に切り替えできる', async ({ page }) => {
     await page.goto('/listening/comprehension')
     const cafeButton = page.getByRole('button', { name: 'Cafe', exact: true })
-    await cafeButton.scrollIntoViewIfNeeded()
     await cafeButton.click()
     await expect(cafeButton).toHaveClass(/border-primary/)
   })

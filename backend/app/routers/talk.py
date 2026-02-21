@@ -11,7 +11,11 @@ from app.dependencies import get_current_user
 from app.models.conversation import ConversationMessage, ConversationSession
 from app.models.user import User
 from app.prompts.conversation import build_conversation_system_prompt
-from app.prompts.scenarios import get_all_scenario_ids, get_scenario, get_scenarios_for_mode
+from app.prompts.scenarios import (
+    get_all_scenario_ids,
+    get_scenario,
+    get_scenarios_for_mode,
+)
 from app.schemas.talk import (
     FeedbackData,
     SessionListResponse,

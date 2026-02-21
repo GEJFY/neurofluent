@@ -74,7 +74,7 @@ def build_main_activity_prompt(
     """メインアクティビティフェーズのシステムプロンプトを構築"""
 
     challenges = "\n".join(
-        f"  {i+1}. {c}" for i, c in enumerate(scenario.get("challenges", []))
+        f"  {i + 1}. {c}" for i, c in enumerate(scenario.get("challenges", []))
     )
     key_phrases = "\n".join(f"  - {p}" for p in scenario.get("key_phrases", []))
 

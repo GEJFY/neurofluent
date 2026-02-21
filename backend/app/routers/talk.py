@@ -11,6 +11,11 @@ from app.dependencies import get_current_user
 from app.models.conversation import ConversationMessage, ConversationSession
 from app.models.user import User
 from app.prompts.conversation import build_conversation_system_prompt
+from app.prompts.scenarios import (
+    get_all_scenario_ids,
+    get_scenario,
+    get_scenarios_for_mode,
+)
 from app.schemas.talk import (
     FeedbackData,
     SessionListResponse,
@@ -33,21 +38,34 @@ async def start_session(
 ):
     """会話セッションを開始し、AIの最初のメッセージを生成"""
 
+    # シナリオを取得（scenario_idが指定されていればDBから、なければランダム or カスタム）
+    scenario = None
+    if data.scenario_id:
+        scenario = get_scenario(data.mode, data.scenario_id)
+    elif not data.scenario_description:
+        # scenario_idもcustom descriptionもない場合、ランダムシナリオを選択
+        scenario = get_scenario(data.mode)
+
     # セッションを作成
+    scenario_desc = data.scenario_description
+    if scenario and not scenario_desc:
+        scenario_desc = f"[{scenario.get('id', '')}] {scenario.get('title', '')}"
+
     session = ConversationSession(
         user_id=current_user.id,
         mode=data.mode,
-        scenario_description=data.scenario_description,
+        scenario_description=scenario_desc,
     )
     db.add(session)
     await db.flush()
 
-    # システムプロンプトを構築
+    # システムプロンプトを構築（シナリオ統合）
     system_prompt = build_conversation_system_prompt(
         mode=data.mode,
         user_level=current_user.target_level,
         scenario_description=data.scenario_description,
         native_language=current_user.native_language,
+        scenario=scenario,
     )
 
     # AIの初回メッセージを生成
@@ -144,12 +162,16 @@ async def send_message(
             continue
         conversation_history.append({"role": role, "content": msg.content})
 
+    # シナリオを復元（scenario_descriptionからscenario_idを抽出）
+    scenario = _extract_scenario_from_session(session)
+
     # システムプロンプトを構築
     system_prompt = build_conversation_system_prompt(
         mode=session.mode,
         user_level=current_user.target_level,
         scenario_description=session.scenario_description,
         native_language=current_user.native_language,
+        scenario=scenario,
     )
 
     # AI応答を生成
@@ -160,6 +182,9 @@ async def send_message(
         system=system_prompt,
     )
 
+    # 過去セッションから弱点履歴を取得
+    weakness_history = await _get_weakness_history(current_user.id, db)
+
     # フィードバックを非同期的に生成（ユーザーの最新メッセージに対して）
     feedback_data = await feedback_service.generate_feedback(
         user_text=data.content,
@@ -168,6 +193,7 @@ async def send_message(
         ],
         user_level=current_user.target_level,
         mode=session.mode,
+        weakness_history=weakness_history,
     )
 
     # フィードバックをユーザーメッセージに保存
@@ -191,6 +217,27 @@ async def send_message(
         feedback=feedback_data,
         created_at=ai_message.created_at,
     )
+
+
+@router.get("/scenarios")
+async def list_scenarios(
+    mode: str | None = Query(default=None, description="モードでフィルタ"),
+):
+    """利用可能なシナリオ一覧を取得"""
+    if mode:
+        scenarios = get_scenarios_for_mode(mode)
+        return [
+            {
+                "id": s["id"],
+                "mode": mode,
+                "title": s["title"],
+                "description": s.get("description", ""),
+                "difficulty": s.get("difficulty", "B2"),
+                "accent_context": s.get("accent_context"),
+            }
+            for s in scenarios
+        ]
+    return get_all_scenario_ids()
 
 
 @router.get("/sessions", response_model=list[SessionListResponse])
@@ -271,3 +318,57 @@ async def get_session(
             for m in messages
         ],
     )
+
+
+# --- プライベートヘルパー ---
+
+
+def _extract_scenario_from_session(session: ConversationSession) -> dict | None:
+    """セッションのscenario_descriptionからシナリオを復元"""
+    desc = session.scenario_description
+    if not desc or not desc.startswith("["):
+        return None
+    # "[scenario-id] Title" 形式からIDを抽出
+    try:
+        scenario_id = desc.split("]")[0].lstrip("[").strip()
+        if scenario_id:
+            return get_scenario(session.mode, scenario_id)
+    except (IndexError, ValueError):
+        pass
+    return None
+
+
+async def _get_weakness_history(
+    user_id: uuid.UUID,
+    db: AsyncSession,
+    max_sessions: int = 5,
+) -> list[str]:
+    """過去セッションのフィードバックから頻出弱点を抽出"""
+    result = await db.execute(
+        select(ConversationMessage)
+        .join(ConversationSession)
+        .where(
+            ConversationSession.user_id == user_id,
+            ConversationMessage.role == "user",
+            ConversationMessage.feedback.isnot(None),
+        )
+        .order_by(ConversationMessage.created_at.desc())
+        .limit(max_sessions * 10)  # 直近数セッション分のメッセージ
+    )
+    messages = result.scalars().all()
+
+    # 文法エラーのパターンを集計
+    error_patterns: dict[str, int] = {}
+    for msg in messages:
+        feedback = msg.feedback
+        if not feedback or not isinstance(feedback, dict):
+            continue
+        for error in feedback.get("grammar_errors", []):
+            explanation = error.get("explanation", "")
+            if explanation:
+                # エラー説明をキーにして頻度を集計
+                error_patterns[explanation] = error_patterns.get(explanation, 0) + 1
+
+    # 頻度順にソートして上位5件を返す
+    sorted_patterns = sorted(error_patterns.items(), key=lambda x: x[1], reverse=True)
+    return [pattern for pattern, _count in sorted_patterns[:5]]

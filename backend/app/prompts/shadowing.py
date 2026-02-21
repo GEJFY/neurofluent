@@ -101,15 +101,18 @@ def build_shadowing_material_prompt(
     topic: str = "business_meeting",
     difficulty: str = "intermediate",
     user_level: str = "B2",
+    accent: str | None = None,
+    environment: str = "clean",
 ) -> str:
     """
     シャドーイング教材生成用のシステムプロンプトを構築
 
     Args:
-        topic: トピック（business_meeting, earnings_call, team_discussion,
-               client_presentation, casual_networking）
+        topic: トピック
         difficulty: 難易度（beginner, intermediate, advanced）
         user_level: ユーザーのCEFRレベル
+        accent: アクセント指定（uk, india, singapore, australia等）
+        environment: 環境設定（clean, phone_call, office等）
 
     Returns:
         システムプロンプト文字列
@@ -120,6 +123,41 @@ def build_shadowing_material_prompt(
     )
 
     themes_list = "\n".join(f"  - {theme}" for theme in topic_config["example_themes"])
+
+    # アクセント特化のガイダンス
+    accent_section = ""
+    if accent and accent != "us":
+        from app.prompts.accent_profiles import ACCENT_FEATURES, ACCENT_VOICES
+
+        accent_info = ACCENT_FEATURES.get(accent, {})
+        voice_info = ACCENT_VOICES.get(accent, {})
+        if accent_info:
+            expressions = "\n".join(
+                f"  - {e}" for e in accent_info.get("common_expressions", [])[:4]
+            )
+            accent_section = f"""
+## Accent-Specific Instructions: {voice_info.get("label", accent)}
+Write the passage as if spoken by a native {voice_info.get("label", accent)} speaker.
+Incorporate natural expressions and phrasing typical of this English variety:
+{expressions}
+
+Use vocabulary choices and sentence structures characteristic of this accent region.
+This helps the learner train their ear for real-world {voice_info.get("label", accent)} in business contexts.
+"""
+
+    # 環境コンテキスト
+    environment_section = ""
+    if environment and environment != "clean":
+        env_contexts = {
+            "phone_call": "Write as if the speaker is on a phone call. Include natural phone conversation features: 'Can you hear me?', 'Sorry, you're breaking up...', brief confirmations like 'Right, right', 'Uh-huh'.",
+            "video_call": "Write as if in a video conference. Include: 'Let me share my screen', 'Can everyone see this?', casual multitasking references.",
+            "office": "Write as if in an open office. Include natural interruptions: 'Oh, hold on a sec', or references to the environment.",
+            "cafe": "Write as if at an informal business meeting in a café. More casual tone, shorter sentences, references to ordering or the environment.",
+            "conference_room": "Write as if presenting in a conference room. Slightly more formal, include references to visual aids or whiteboard.",
+        }
+        env_note = env_contexts.get(environment, "")
+        if env_note:
+            environment_section = f"\n## Environment Context\n{env_note}\n"
 
     return f"""You are a Business English shadowing material generator for FluentEdge AI.
 
@@ -141,14 +179,19 @@ natural spoken English from {topic_config["context"]}.
 
 ## Example Themes for This Topic
 {themes_list}
-
+{accent_section}
+{environment_section}
 ## Requirements
-1. Write natural, spoken-style English (not overly formal written style)
+1. Write natural, spoken-style English (NOT formal written style, NOT announcer English)
 2. Include at least 2-3 high-frequency business phrases or collocations
 3. The passage should flow naturally for speaking aloud
-4. Include appropriate discourse markers (well, so, actually, in fact, etc.)
-5. For intermediate/advanced: include examples of connected speech patterns
-   (linking, weak forms, contractions) that learners should practice
+4. Include discourse markers (well, so, actually, in fact, I mean, you know, etc.)
+5. Include REALISTIC speech features:
+   - Hesitations and self-corrections ("I think— actually, let me rephrase that")
+   - Filler words appropriate to difficulty level
+   - Connected speech patterns (linking, weak forms, contractions)
+   - Incomplete sentences that get redirected (as in real speech)
+6. This should sound like a REAL PERSON talking, not a textbook recording
 
 ## Output Format
 Return ONLY a JSON object:
@@ -172,7 +215,7 @@ Return ONLY a JSON object:
 }}
 
 ## Rules
-- The text must be appropriate for reading aloud / shadowing practice
+- The text must sound like REAL speech, not a polished script
 - Keep it focused on ONE mini-topic within the broader category
 - Vocabulary notes should be in Japanese for the meaning field
 - Include 3-5 key phrases and 3-5 vocabulary notes

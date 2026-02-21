@@ -126,6 +126,9 @@ class TestShadowingService:
                 text="Hello world",
                 voice="en-US-JennyMultilingualNeural",
                 speed=1.2,
+                accent=None,
+                gender="female",
+                environment="clean",
             )
 
     def test_suggested_speeds_by_difficulty(self):

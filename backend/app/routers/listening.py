@@ -46,12 +46,23 @@ async def generate_shadowing_material(
         default="standard",
         description="モード: standard, chunk, parallel",
     ),
+    accent: str | None = Query(
+        default=None,
+        description="アクセント: us, uk, india, singapore, australia等",
+    ),
+    environment: str = Query(
+        default="clean",
+        description="環境: clean, phone_call, video_call, office, cafe",
+    ),
 ):
     """
     シャドーイング教材を動的に生成
 
     ユーザーのレベルと指定されたトピック・難易度に基づいて、
     2-4文のビジネス英語テキストと付随情報を返す。
+
+    accent / environment を指定して、特定のアクセントや
+    環境に特化した教材を生成可能。
     """
     # トピックのバリデーション
     valid_topics = [
@@ -85,6 +96,8 @@ async def generate_shadowing_material(
         topic=topic,
         difficulty=difficulty,
         user_level=current_user.target_level,
+        accent=accent,
+        environment=environment,
     )
 
     return material
@@ -180,12 +193,16 @@ async def text_to_speech(
 
     Azure TTSを使用して、指定されたテキストを
     WAV形式の音声に変換して返す。
+    アクセント選択・環境音シミュレーションに対応。
     """
     try:
         audio_bytes = await shadowing_service.generate_audio(
             text=data.text,
             speed=data.speed,
             voice=data.voice,
+            accent=data.accent,
+            gender=data.gender,
+            environment=data.environment,
         )
 
         return Response(
@@ -201,3 +218,16 @@ async def text_to_speech(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"音声合成に失敗しました: {str(e)}",
         )
+
+
+@router.get("/accents")
+async def list_accents(
+    current_user: User = Depends(get_current_user),
+):
+    """利用可能なアクセント一覧を取得"""
+    from app.services.speech_service import speech_service
+
+    return {
+        "accents": speech_service.get_available_accents(),
+        "environments": speech_service.get_available_environments(),
+    }

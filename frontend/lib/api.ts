@@ -690,15 +690,34 @@ class ApiClient {
 
   async startTalk(
     mode: string = "casual_chat",
-    scenarioDescription?: string
+    scenarioDescription?: string,
+    scenarioId?: string
   ): Promise<SessionResponse> {
     return this.request<SessionResponse>("/api/talk/start", {
       method: "POST",
       body: JSON.stringify({
         mode,
         scenario_description: scenarioDescription,
+        scenario_id: scenarioId,
       }),
     });
+  }
+
+  async getScenarios(
+    mode?: string
+  ): Promise<
+    {
+      id: string;
+      mode: string;
+      title: string;
+      description: string;
+      difficulty: string;
+      accent_context?: string;
+    }[]
+  > {
+    const params = new URLSearchParams();
+    if (mode) params.set("mode", mode);
+    return this.request(`/api/talk/scenarios?${params.toString()}`);
   }
 
   async sendMessage(
@@ -878,13 +897,25 @@ class ApiClient {
   async getShadowingMaterial(
     topic?: string,
     difficulty: string = "intermediate",
-    mode: string = "standard"
+    mode: string = "standard",
+    accent?: string,
+    environment?: string
   ): Promise<ShadowingMaterial> {
     const params = new URLSearchParams({ difficulty, mode });
     if (topic) params.set("topic", topic);
+    if (accent) params.set("accent", accent);
+    if (environment && environment !== "clean")
+      params.set("environment", environment);
     return this.request<ShadowingMaterial>(
       `/api/listening/shadowing/material?${params.toString()}`
     );
+  }
+
+  async getAccents(): Promise<{
+    accents: { id: string; label: string; label_ja: string }[];
+    environments: { id: string; label: string; description: string }[];
+  }> {
+    return this.request("/api/listening/accents");
   }
 
   async evaluateShadowing(
@@ -978,13 +1009,20 @@ class ApiClient {
   async getComprehensionMaterial(
     topic?: string,
     difficulty: string = "intermediate",
-    duration: number = 3
+    duration: number = 3,
+    accent?: string,
+    multiSpeaker?: boolean,
+    environment?: string
   ): Promise<ComprehensionMaterial> {
     const params = new URLSearchParams({
       difficulty,
       duration: String(duration),
     });
     if (topic) params.set("topic", topic);
+    if (accent) params.set("accent", accent);
+    if (multiSpeaker) params.set("multi_speaker", "true");
+    if (environment && environment !== "clean")
+      params.set("environment", environment);
     return this.request<ComprehensionMaterial>(
       `/api/listening/comprehension/material?${params.toString()}`
     );
@@ -1013,7 +1051,8 @@ class ApiClient {
 
   async checkComprehensionAnswer(
     questionId: string,
-    userAnswer: string
+    userAnswer: string,
+    correctAnswer: string
   ): Promise<ComprehensionResult> {
     return this.request<ComprehensionResult>(
       "/api/listening/comprehension/answer",
@@ -1022,6 +1061,7 @@ class ApiClient {
         body: JSON.stringify({
           question_id: questionId,
           user_answer: userAnswer,
+          correct_answer: correctAnswer,
         }),
       }
     );

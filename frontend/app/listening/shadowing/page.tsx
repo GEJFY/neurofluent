@@ -106,6 +106,23 @@ const DIFFICULTIES: DifficultyOption[] = [
   { id: "advanced", label: "Advanced", color: "text-red-400 bg-red-500/15" },
 ];
 
+const ACCENTS = [
+  { id: "", label: "Any" },
+  { id: "us", label: "US" },
+  { id: "uk", label: "UK" },
+  { id: "india", label: "India" },
+  { id: "singapore", label: "Singapore" },
+  { id: "australia", label: "Australia" },
+];
+
+const ENVIRONMENTS = [
+  { id: "clean", label: "Clean" },
+  { id: "phone_call", label: "Phone Call" },
+  { id: "video_call", label: "Video Call" },
+  { id: "office", label: "Office" },
+  { id: "cafe", label: "Cafe" },
+];
+
 // フォールバック用のサンプルデータ（API失敗時に使用）
 const FALLBACK_EXERCISES: Record<string, ShadowingExercise> = {
   business_meeting: {
@@ -154,6 +171,8 @@ export default function ShadowingPage() {
   const [state, setState] = useState<ShadowingState>("setup");
   const [selectedTopic, setSelectedTopic] = useState("business_meeting");
   const [selectedDifficulty, setSelectedDifficulty] = useState("intermediate");
+  const [selectedAccent, setSelectedAccent] = useState("");
+  const [selectedEnvironment, setSelectedEnvironment] = useState("clean");
   const [exercise, setExercise] = useState<ShadowingExercise | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showText, setShowText] = useState(true);
@@ -168,7 +187,10 @@ export default function ShadowingPage() {
       // APIからシャドーイング素材を取得
       const material: ShadowingMaterial = await api.getShadowingMaterial(
         selectedTopic,
-        selectedDifficulty
+        selectedDifficulty,
+        "standard",
+        selectedAccent || undefined,
+        selectedEnvironment
       );
       // APIレスポンスをShadowingExercise型にマッピング
       let audioUrl = "";
@@ -202,7 +224,7 @@ export default function ShadowingPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedTopic, selectedDifficulty, addToast]);
+  }, [selectedTopic, selectedDifficulty, selectedAccent, selectedEnvironment, addToast]);
 
   // リスニング完了 → シャドーイングへ
   const handleListeningComplete = useCallback(() => {
@@ -366,6 +388,50 @@ export default function ShadowingPage() {
                       }`}
                     >
                       {diff.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* アクセント選択 */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                  Accent
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {ACCENTS.map((accent) => (
+                    <button
+                      key={accent.id}
+                      onClick={() => setSelectedAccent(accent.id)}
+                      className={`px-3 py-2 rounded-xl text-xs font-semibold text-center transition-colors border ${
+                        selectedAccent === accent.id
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "text-[var(--color-text-muted)] border-[var(--color-border)] hover:border-primary/30"
+                      }`}
+                    >
+                      {accent.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 環境選択 */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                  Environment
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {ENVIRONMENTS.map((env) => (
+                    <button
+                      key={env.id}
+                      onClick={() => setSelectedEnvironment(env.id)}
+                      className={`px-3 py-2 rounded-xl text-xs font-semibold text-center transition-colors border ${
+                        selectedEnvironment === env.id
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "text-[var(--color-text-muted)] border-[var(--color-border)] hover:border-primary/30"
+                      }`}
+                    >
+                      {env.label}
                     </button>
                   ))}
                 </div>

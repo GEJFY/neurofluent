@@ -61,6 +61,23 @@ const DURATIONS = [
   { id: "long", label: "Long", labelJa: "長い", minutes: "5-10 min", durationMinutes: 7 },
 ];
 
+const ACCENTS = [
+  { id: "", label: "Any" },
+  { id: "us", label: "US" },
+  { id: "uk", label: "UK" },
+  { id: "india", label: "India" },
+  { id: "singapore", label: "Singapore" },
+  { id: "australia", label: "Australia" },
+];
+
+const ENVIRONMENTS = [
+  { id: "clean", label: "Clean" },
+  { id: "phone_call", label: "Phone Call" },
+  { id: "video_call", label: "Video Call" },
+  { id: "office", label: "Office" },
+  { id: "cafe", label: "Cafe" },
+];
+
 // フォールバック用のデモ問題データ（API失敗時に使用）
 const FALLBACK_QUESTIONS: Question[] = [
   {
@@ -169,6 +186,9 @@ export default function ComprehensionPage() {
   const [selectedTopic, setSelectedTopic] = useState("business_meeting");
   const [difficulty, setDifficulty] = useState<Difficulty>("intermediate");
   const [selectedDuration, setSelectedDuration] = useState("medium");
+  const [selectedAccent, setSelectedAccent] = useState("");
+  const [multiSpeaker, setMultiSpeaker] = useState(false);
+  const [selectedEnvironment, setSelectedEnvironment] = useState("clean");
   const [isPlaying, setIsPlaying] = useState(false);
   const [listeningProgress, setListeningProgress] = useState(0);
   const [notes, setNotes] = useState("");
@@ -206,7 +226,10 @@ export default function ComprehensionPage() {
       const mat: ComprehensionMaterial = await api.getComprehensionMaterial(
         selectedTopic,
         difficulty,
-        durationMinutes
+        durationMinutes,
+        selectedAccent || undefined,
+        multiSpeaker,
+        selectedEnvironment
       );
       setMaterial(mat);
 
@@ -255,7 +278,7 @@ export default function ComprehensionPage() {
     } finally {
       setIsLoadingStart(false);
     }
-  }, [selectedTopic, difficulty, selectedDuration, addToast]);
+  }, [selectedTopic, difficulty, selectedDuration, selectedAccent, multiSpeaker, selectedEnvironment, addToast]);
 
   // 音声再生/一時停止
   const handleTogglePlay = useCallback(() => {
@@ -338,6 +361,9 @@ export default function ComprehensionPage() {
     setQuestions(FALLBACK_QUESTIONS);
     setKeyPoints(FALLBACK_KEY_POINTS);
     setVocabulary(FALLBACK_VOCABULARY);
+    setSelectedAccent("");
+    setMultiSpeaker(false);
+    setSelectedEnvironment("clean");
   }, []);
 
   // クイズスコア計算
@@ -443,6 +469,79 @@ export default function ComprehensionPage() {
                     <span className="text-[10px] text-[var(--color-text-muted)] ml-1">
                       ({dur.minutes})
                     </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* アクセント選択 */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                Accent
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {ACCENTS.map((accent) => (
+                  <button
+                    key={accent.id}
+                    onClick={() => setSelectedAccent(accent.id)}
+                    className={`px-3 py-2 rounded-xl text-xs font-medium transition-colors border ${
+                      selectedAccent === accent.id
+                        ? "bg-primary/10 border-primary text-primary"
+                        : "bg-[var(--color-bg-card)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-primary/30"
+                    }`}
+                  >
+                    {accent.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* マルチスピーカートグル */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                Speakers
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setMultiSpeaker(false)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors border ${
+                    !multiSpeaker
+                      ? "bg-primary/10 border-primary text-primary"
+                      : "bg-[var(--color-bg-card)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-primary/30"
+                  }`}
+                >
+                  Single
+                </button>
+                <button
+                  onClick={() => setMultiSpeaker(true)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors border ${
+                    multiSpeaker
+                      ? "bg-primary/10 border-primary text-primary"
+                      : "bg-[var(--color-bg-card)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-primary/30"
+                  }`}
+                >
+                  Multi-Speaker
+                </button>
+              </div>
+            </div>
+
+            {/* 環境選択 */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                Environment
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {ENVIRONMENTS.map((env) => (
+                  <button
+                    key={env.id}
+                    onClick={() => setSelectedEnvironment(env.id)}
+                    className={`px-3 py-2 rounded-xl text-xs font-medium transition-colors border ${
+                      selectedEnvironment === env.id
+                        ? "bg-primary/10 border-primary text-primary"
+                        : "bg-[var(--color-bg-card)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-primary/30"
+                    }`}
+                  >
+                    {env.label}
                   </button>
                 ))}
               </div>

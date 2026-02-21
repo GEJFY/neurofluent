@@ -21,7 +21,7 @@ interface TalkState {
   error: string | null;
 
   /** 新しいトークセッション開始 */
-  startSession: (mode?: string) => Promise<void>;
+  startSession: (mode?: string, scenarioId?: string) => Promise<void>;
 
   /** メッセージ送信 */
   sendMessage: (content: string) => Promise<void>;
@@ -43,10 +43,10 @@ export const useTalkStore = create<TalkState>((set, get) => ({
   isSending: false,
   error: null,
 
-  startSession: async (mode: string = "casual_chat") => {
+  startSession: async (mode: string = "casual_chat", scenarioId?: string) => {
     set({ isLoading: true, error: null, messages: [] });
     try {
-      const session = await api.startTalk(mode);
+      const session = await api.startTalk(mode, undefined, scenarioId);
       set({
         currentSession: session,
         messages: session.messages,

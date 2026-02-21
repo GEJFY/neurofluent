@@ -5,19 +5,39 @@ import { Send, Loader2, MessageCircle } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import ChatWindow from "@/components/chat/ChatWindow";
 import { useTalkStore } from "@/lib/stores/talk-store";
+import { api } from "@/lib/api";
 
 /**
  * AI Free Talk ページ
- * - モードセレクター（MVP: Casual Chat のみ）
+ * - モードセレクター
+ * - シナリオ選択（モード別）
  * - チャットウィンドウ
  * - テキスト入力 + 送信ボタン
  */
+
+interface TalkScenario {
+  id: string;
+  mode: string;
+  title: string;
+  description: string;
+  difficulty: string;
+  accent_context?: string;
+}
 
 const TALK_MODES = [
   { id: "casual_chat", label: "Casual Chat", description: "自由に英会話を楽しもう", disabled: false },
   { id: "meeting", label: "Business Meeting", description: "ビジネス会議のシミュレーション", disabled: false },
   { id: "interview", label: "Interview", description: "面接対策の練習", disabled: false },
+  { id: "presentation", label: "Presentation", description: "プレゼンの練習", disabled: false },
+  { id: "negotiation", label: "Negotiation", description: "交渉スキルを磨く", disabled: false },
+  { id: "phone_call", label: "Phone Call", description: "電話対応の練習", disabled: false },
 ] as const;
+
+const DIFFICULTY_COLORS: Record<string, string> = {
+  beginner: "text-green-400 bg-green-500/15",
+  intermediate: "text-warning bg-warning/15",
+  advanced: "text-red-400 bg-red-500/15",
+};
 
 export default function TalkPage() {
   const {
@@ -34,13 +54,39 @@ export default function TalkPage() {
 
   const [input, setInput] = useState("");
   const [selectedMode, setSelectedMode] = useState("casual_chat");
+  const [scenarios, setScenarios] = useState<TalkScenario[]>([]);
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
+  const [isLoadingScenarios, setIsLoadingScenarios] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // モード変更時にシナリオを取得
+  useEffect(() => {
+    setSelectedScenarioId(null);
+    if (selectedMode === "casual_chat") {
+      setScenarios([]);
+      return;
+    }
+    let cancelled = false;
+    setIsLoadingScenarios(true);
+    api.getScenarios(selectedMode).then((data) => {
+      if (!cancelled) {
+        setScenarios(data);
+        setIsLoadingScenarios(false);
+      }
+    }).catch(() => {
+      if (!cancelled) {
+        setScenarios([]);
+        setIsLoadingScenarios(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [selectedMode]);
 
   // セッション開始
   const handleStartSession = useCallback(async () => {
     clearError();
-    await startSession(selectedMode);
-  }, [selectedMode, startSession, clearError]);
+    await startSession(selectedMode, selectedScenarioId ?? undefined);
+  }, [selectedMode, selectedScenarioId, startSession, clearError]);
 
   // メッセージ送信
   const handleSend = useCallback(async () => {
@@ -132,6 +178,67 @@ export default function TalkPage() {
                   ))}
                 </div>
               </div>
+
+              {/* シナリオ選択（casual_chat以外） */}
+              {scenarios.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                    Scenario <span className="text-[var(--color-text-muted)] font-normal normal-case">(optional)</span>
+                  </p>
+                  <div className="grid gap-2 max-h-48 overflow-y-auto">
+                    {scenarios.map((scenario) => (
+                      <button
+                        key={scenario.id}
+                        onClick={() =>
+                          setSelectedScenarioId(
+                            selectedScenarioId === scenario.id ? null : scenario.id
+                          )
+                        }
+                        className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-colors ${
+                          selectedScenarioId === scenario.id
+                            ? "border-primary bg-primary/5"
+                            : "border-[var(--color-border)] hover:border-primary/30"
+                        }`}
+                      >
+                        <div
+                          className={`w-4 h-4 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            selectedScenarioId === scenario.id
+                              ? "border-primary"
+                              : "border-[var(--color-text-muted)]"
+                          }`}
+                        >
+                          {selectedScenarioId === scenario.id && (
+                            <div className="w-2 h-2 rounded-full bg-primary" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+                              {scenario.title}
+                            </p>
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${
+                                DIFFICULTY_COLORS[scenario.difficulty] || "text-[var(--color-text-muted)] bg-[var(--color-bg-input)]"
+                              }`}
+                            >
+                              {scenario.difficulty}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[var(--color-text-muted)] line-clamp-2">
+                            {scenario.description}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {isLoadingScenarios && (
+                <div className="flex items-center justify-center gap-2 py-3 text-xs text-[var(--color-text-muted)]">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Loading scenarios...
+                </div>
+              )}
 
               {/* エラー表示 */}
               {error && (

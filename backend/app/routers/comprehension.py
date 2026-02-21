@@ -137,7 +137,7 @@ async def check_answer(
     result = await comprehension_service.check_answer(
         question_id=data.question_id,
         user_answer=data.user_answer,
-        correct_answer=data.user_answer,  # フォールバック: 実際はDBから取得
+        correct_answer=data.correct_answer,
     )
 
     # 不正解の場合、復習アイテムを作成

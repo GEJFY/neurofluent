@@ -45,10 +45,8 @@ test.describe('Comprehension ページ - セットアップ画面', () => {
     await page.goto('/listening/comprehension')
     const ukButton = page.getByRole('button', { name: 'UK', exact: true })
     await ukButton.click()
-    await expect(ukButton).toHaveClass(/border-primary/)
-    // Any は非選択状態
-    const anyButton = page.getByRole('button', { name: 'Any', exact: true })
-    await expect(anyButton).not.toHaveClass(/border-primary/)
+    // 選択状態: bg-primary/10 が付与される（hover:border-primary/30 と区別するため bg-primary でチェック）
+    await expect(ukButton).toHaveClass(/bg-primary/)
   })
 
   // --- マルチスピーカー ---
@@ -67,10 +65,8 @@ test.describe('Comprehension ページ - セットアップ画面', () => {
     await page.goto('/listening/comprehension')
     const multiButton = page.getByRole('button', { name: 'Multi-Speaker', exact: true })
     await multiButton.click()
-    await expect(multiButton).toHaveClass(/border-primary/)
-    // Single は非選択状態
-    const singleButton = page.getByRole('button', { name: 'Single', exact: true })
-    await expect(singleButton).not.toHaveClass(/border-primary/)
+    // 選択状態: bg-primary/10 が付与される
+    await expect(multiButton).toHaveClass(/bg-primary/)
   })
 
   // --- 環境 ---

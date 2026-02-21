@@ -183,7 +183,8 @@ FluentEdge API は **Bearer JWT** 認証を使用します。
 
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
-| `mode` | string | Yes | `meeting`, `presentation`, `negotiation`, `small_talk`, `interview` |
+| `mode` | string | Yes | `meeting`, `presentation`, `negotiation`, `small_talk`, `interview`, `phone_call` |
+| `scenario_id` | string | No | シナリオ ID (`scenarios.py` のシナリオを使用する場合) |
 | `scenario_description` | string | No | カスタムシナリオの説明 |
 
 **レスポンス** `200 OK`:
@@ -268,6 +269,33 @@ FluentEdge API は **Bearer JWT** 認証を使用します。
 セッション詳細 (全メッセージ含む) を取得。認証必須。
 
 **エラー**: `404` セッション未検出
+
+---
+
+### `GET /api/talk/scenarios`
+
+利用可能なシナリオ一覧を取得。認証必須。
+
+**クエリパラメータ**:
+
+| パラメータ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `mode` | string | No | モードでフィルタ (`meeting`, `negotiation` 等)。未指定時は全シナリオ |
+
+**レスポンス** `200 OK`:
+
+```json
+[
+  {
+    "id": "mtg-budget-overrun",
+    "mode": "meeting",
+    "title": "Budget Overrun Explanation",
+    "description": "Q3の予算が15%超過...",
+    "difficulty": "B2-C1",
+    "accent_context": null
+  }
+]
+```
 
 ---
 
@@ -435,9 +463,32 @@ WebSocket 音声ストリーム。バイナリ (音声チャンク) でリアル
 
 | パラメータ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
-| `level` | string | No | 難易度 (A2-C2) |
-| `topic` | string | No | トピック |
-| `speed` | float | No | 速度 (0.5-2.0) |
+| `topic` | string | No | トピック (`business_meeting`, `earnings_call` 等) |
+| `difficulty` | string | No | 難易度 (`beginner`, `intermediate`, `advanced`) |
+| `mode` | string | No | モード (`standard`, `chunk`, `parallel`) |
+| `accent` | string | No | アクセント (`us`, `uk`, `india`, `singapore`, `australia` 等) |
+| `environment` | string | No | 環境 (`clean`, `phone_call`, `video_call`, `office`, `cafe`) |
+
+---
+
+### `GET /api/listening/accents`
+
+利用可能なアクセント・環境一覧を取得。認証必須。
+
+**レスポンス** `200 OK`:
+
+```json
+{
+  "accents": [
+    {"id": "us", "label": "American English", "label_ja": "アメリカ英語"},
+    {"id": "uk", "label": "British English", "label_ja": "イギリス英語"}
+  ],
+  "environments": [
+    {"id": "clean", "label": "クリーン（スタジオ品質）"},
+    {"id": "phone_call", "label": "電話回線"}
+  ]
+}
+```
 
 ---
 
@@ -495,20 +546,24 @@ WebSocket 音声ストリーム。バイナリ (音声チャンク) でリアル
 
 ## Listening Comprehension -- 理解度テスト
 
-### `GET /api/listening/comprehension`
+### `GET /api/listening/comprehension/material`
 
-リスニング理解度テストを生成。認証必須。
+コンプリヘンション素材を生成。認証必須。
 
 **クエリパラメータ**:
 
 | パラメータ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
-| `level` | string | No | 難易度 |
-| `topic` | string | No | トピック |
+| `topic` | string | No | トピック (`business_meeting`, `presentation` 等) |
+| `difficulty` | string | No | 難易度 (`beginner`, `intermediate`, `advanced`) |
+| `duration` | int | No | 推定分数 (デフォルト 3) |
+| `accent` | string | No | アクセント (`us`, `uk`, `india` 等) |
+| `multi_speaker` | bool | No | マルチスピーカーモード |
+| `environment` | string | No | 環境 (`clean`, `phone_call` 等) |
 
 ---
 
-### `POST /api/listening/comprehension/check`
+### `POST /api/listening/comprehension/answer`
 
 理解度テスト回答を送信。認証必須。
 
@@ -516,8 +571,9 @@ WebSocket 音声ストリーム。バイナリ (音声チャンク) でリアル
 
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
-| `test_id` | string | Yes | テスト ID |
-| `answers` | array | Yes | 回答配列 |
+| `question_id` | string | Yes | 問題 ID |
+| `user_answer` | string | Yes | ユーザーの回答 |
+| `correct_answer` | string | Yes | 正解テキスト |
 
 ---
 
@@ -792,6 +848,7 @@ Stripe から以下のイベントを処理:
 | `POST` | `/api/talk/message` | Yes | メッセージ送信 |
 | `GET` | `/api/talk/sessions` | Yes | セッション一覧 |
 | `GET` | `/api/talk/sessions/{id}` | Yes | セッション詳細 |
+| `GET` | `/api/talk/scenarios` | Yes | シナリオ一覧 |
 | `POST` | `/api/talk/realtime/start` | Yes | リアルタイム音声開始 |
 | `WS` | `/api/talk/realtime/ws/{id}` | Yes | WebSocket 音声 |
 | `GET` | `/api/speaking/flash` | Yes | 瞬間英作文取得 |
@@ -804,6 +861,7 @@ Stripe から以下のイベントを処理:
 | `POST` | `/api/speaking/pronunciation/evaluate` | Yes | 発音評価 |
 | `GET` | `/api/listening/shadowing/material` | Yes | シャドーイング素材 |
 | `POST` | `/api/listening/shadowing/evaluate` | Yes | シャドーイング評価 |
+| `GET` | `/api/listening/accents` | Yes | アクセント・環境一覧 |
 | `POST` | `/api/listening/tts` | Yes | テキスト音声変換 |
 | `GET` | `/api/listening/mogomogo` | Yes | モゴモゴ素材 |
 | `POST` | `/api/listening/mogomogo/evaluate` | Yes | モゴモゴ評価 |

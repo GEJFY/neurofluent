@@ -49,6 +49,7 @@ class ComprehensionAnswerRequest(BaseModel):
 
     question_id: str = Field(description="問題ID")
     user_answer: str = Field(min_length=1, description="ユーザーの回答")
+    correct_answer: str = Field(description="正解テキスト")
 
 
 class ComprehensionResult(BaseModel):

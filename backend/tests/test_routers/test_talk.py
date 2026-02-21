@@ -131,3 +131,48 @@ class TestTalkRouter:
         response = await auth_client.get(f"/api/talk/sessions/{fake_id}")
 
         assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_list_scenarios_by_mode(self, auth_client):
+        """モード指定でシナリオ一覧を取得"""
+        response = await auth_client.get(
+            "/api/talk/scenarios", params={"mode": "meeting"}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) >= 1
+        for item in data:
+            assert "id" in item
+            assert "title" in item
+            assert "difficulty" in item
+
+    @pytest.mark.asyncio
+    async def test_list_scenarios_all(self, auth_client):
+        """モード未指定で全シナリオ一覧を取得"""
+        response = await auth_client.get("/api/talk/scenarios")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) >= 10
+
+    @pytest.mark.asyncio
+    async def test_start_session_with_scenario_id(self, auth_client):
+        """シナリオID指定でセッションを開始"""
+        with patch("app.routers.talk.claude_service") as mock_llm:
+            mock_llm.chat = AsyncMock(return_value="Mock AI response for scenario")
+
+            response = await auth_client.post(
+                "/api/talk/start",
+                json={
+                    "mode": "meeting",
+                    "scenario_id": "mtg-budget-overrun",
+                },
+            )
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["mode"] == "meeting"
+            assert len(data["messages"]) >= 1

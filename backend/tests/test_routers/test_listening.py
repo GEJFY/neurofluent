@@ -99,6 +99,60 @@ class TestListeningRouter:
         assert isinstance(data, list)
 
     @pytest.mark.asyncio
+    async def test_list_accents(self, auth_client):
+        """アクセント・環境一覧の取得"""
+        with patch("app.services.speech_service.speech_service") as mock_svc:
+            mock_svc.get_available_accents = lambda: [
+                {"id": "us", "label": "American English"},
+                {"id": "uk", "label": "British English"},
+            ]
+            mock_svc.get_available_environments = lambda: [
+                {"id": "clean", "label": "Clean"},
+                {"id": "phone_call", "label": "Phone Call"},
+            ]
+
+            response = await auth_client.get("/api/listening/accents")
+
+            assert response.status_code == 200
+            data = response.json()
+            assert "accents" in data
+            assert "environments" in data
+            assert len(data["accents"]) >= 1
+            assert len(data["environments"]) >= 1
+
+    @pytest.mark.asyncio
+    async def test_get_shadowing_material_with_accent(self, auth_client, mock_claude):
+        """アクセント・環境指定でシャドーイング教材を取得"""
+        mock_material = ShadowingMaterial(
+            text="Shall we crack on with the agenda?",
+            suggested_speeds=[0.8, 1.0],
+            key_phrases=["crack on"],
+            vocabulary_notes=[],
+            difficulty="intermediate",
+        )
+
+        with patch("app.routers.listening.shadowing_service") as mock_svc:
+            mock_svc.generate_material = AsyncMock(return_value=mock_material)
+
+            response = await auth_client.get(
+                "/api/listening/shadowing/material",
+                params={
+                    "topic": "business_meeting",
+                    "difficulty": "intermediate",
+                    "accent": "uk",
+                    "environment": "phone_call",
+                },
+            )
+
+            assert response.status_code == 200
+            # サービスにaccent/environmentが渡されたことを検証
+            mock_svc.generate_material.assert_called_once()
+            call_kwargs = mock_svc.generate_material.call_args
+            assert call_kwargs.kwargs.get("accent") == "uk" or (
+                len(call_kwargs.args) > 3 and call_kwargs.args[3] == "uk"
+            )
+
+    @pytest.mark.asyncio
     async def test_unauthenticated(self, client):
         """未認証ユーザーは401/403エラー（HTTPBearer）"""
         response = await client.get("/api/listening/shadowing/material")

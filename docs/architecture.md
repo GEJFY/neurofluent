@@ -158,6 +158,13 @@ backend/app/
   models/               # SQLAlchemy モデル (9テーブル)
   schemas/              # Pydantic スキーマ
   prompts/              # LLM プロンプトテンプレート
+    conversation.py     #   会話システムプロンプト
+    feedback.py         #   フィードバック生成プロンプト
+    shadowing.py        #   シャドーイング素材生成
+    comprehension.py    #   コンプリヘンション素材生成
+    accent_profiles.py  #   マルチアクセント音声設定・特徴DB
+    scenarios.py        #   100+ ビジネスシナリオDB
+    lesson_structure.py #   3フェーズレッスン構造化プロンプト
   middleware/           # ミドルウェア (ログ, エラーハンドラ)
   llm/                  # マルチクラウド LLM 抽象化レイヤー
 ```

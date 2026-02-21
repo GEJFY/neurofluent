@@ -69,6 +69,18 @@ class ShadowingStartRequest(BaseModel):
         default="standard",
         description="モード: standard（通常）, chunk（チャンク分割）, parallel（パラレルリーディング）",
     )
+    accent: str = Field(
+        default="us",
+        description="アクセント: us, uk, india, singapore, australia, ireland, hongkong, southafrica",
+    )
+    gender: str = Field(
+        default="female",
+        description="話者の性別: female, male",
+    )
+    environment: str = Field(
+        default="clean",
+        description="環境音: clean, phone_call, video_call, office, cafe, conference_room",
+    )
 
 
 class ShadowingEvaluateRequest(BaseModel):
@@ -105,8 +117,20 @@ class TTSRequest(BaseModel):
     text: str = Field(min_length=1, max_length=5000, description="変換対象テキスト")
     voice: str = Field(
         default="en-US-JennyMultilingualNeural",
-        description="音声名（Azure Neural Voice）",
+        description="音声名（Azure Neural Voice）。accentが指定された場合は無視。",
     )
     speed: float = Field(
         default=1.0, ge=0.5, le=2.0, description="再生速度（0.5x - 2.0x）"
+    )
+    accent: str | None = Field(
+        default=None,
+        description="アクセント: us, uk, india, singapore, australia, ireland, hongkong, southafrica",
+    )
+    gender: str = Field(
+        default="female",
+        description="話者の性別: female, male",
+    )
+    environment: str = Field(
+        default="clean",
+        description="環境音: clean, phone_call, video_call, office, cafe, conference_room",
     )

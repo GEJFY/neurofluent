@@ -18,6 +18,8 @@ class FeedbackService:
         conversation_context: list[dict],
         user_level: str = "B2",
         mode: str = "meeting",
+        weakness_history: list[str] | None = None,
+        industry: str | None = None,
     ) -> FeedbackData:
         """
         ユーザーの英語テキストを分析してフィードバックを生成
@@ -27,11 +29,18 @@ class FeedbackService:
             conversation_context: 直近の会話履歴
             user_level: ユーザーのCEFRレベル
             mode: 会話モード
+            weakness_history: 過去セッションで検出された頻出弱点パターン
+            industry: ユーザーの業界
 
         Returns:
             FeedbackData: 構造化されたフィードバック
         """
-        system_prompt = build_feedback_prompt(user_level, mode)
+        system_prompt = build_feedback_prompt(
+            user_level=user_level,
+            mode=mode,
+            weakness_history=weakness_history,
+            industry=industry,
+        )
 
         # 会話コンテキストを整形
         context_text = ""

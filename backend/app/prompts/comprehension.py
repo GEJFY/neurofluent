@@ -92,6 +92,9 @@ def build_material_generation_prompt(
     topic: str,
     difficulty: str = "intermediate",
     duration_minutes: int = 3,
+    accent: str | None = None,
+    multi_speaker: bool = False,
+    environment: str = "clean",
 ) -> str:
     """
     リスニング素材生成用のシステムプロンプトを構築
@@ -100,6 +103,9 @@ def build_material_generation_prompt(
         topic: トピック
         difficulty: 難易度 (beginner, intermediate, advanced)
         duration_minutes: 素材の推定所要時間（分）
+        accent: アクセント指定
+        multi_speaker: マルチスピーカーモード
+        environment: 環境設定
 
     Returns:
         システムプロンプト文字列
@@ -112,6 +118,7 @@ def build_material_generation_prompt(
             "vocabulary": "basic business vocabulary, common expressions",
             "grammar": "simple sentences, basic tenses, common connectors",
             "cefr": "A2-B1",
+            "speech_features": "Clear pronunciation, minimal reductions, natural pauses",
         },
         "intermediate": {
             "word_count": duration_minutes * 130,
@@ -119,6 +126,7 @@ def build_material_generation_prompt(
             "vocabulary": "intermediate business vocabulary, idiomatic expressions",
             "grammar": "complex sentences, varied tenses, conditional structures",
             "cefr": "B1-B2",
+            "speech_features": "Some connected speech, moderate use of reductions (gonna, wanna), natural hesitations",
         },
         "advanced": {
             "word_count": duration_minutes * 160,
@@ -126,10 +134,61 @@ def build_material_generation_prompt(
             "vocabulary": "advanced business vocabulary, specialized terms, nuanced expressions",
             "grammar": "sophisticated structures, subjunctive, complex subordination",
             "cefr": "C1-C2",
+            "speech_features": "Full connected speech, heavy reductions, interruptions, overlapping talk, real-world messiness",
         },
     }
 
     guide = difficulty_guidance.get(difficulty, difficulty_guidance["intermediate"])
+
+    # マルチスピーカーセクション
+    speaker_section = ""
+    if multi_speaker:
+        speaker_section = """
+### Multi-Speaker Format
+Write the text as a DIALOGUE between 2-3 speakers. Format:
+- Use speaker labels: "Speaker A (Name/Role):", "Speaker B (Name/Role):"
+- Include realistic turn-taking: interruptions, overlapping, back-channeling
+- Each speaker should have a distinct communication style
+- Include realistic conversation dynamics: agreement, disagreement, building on ideas
+"""
+    else:
+        speaker_section = """
+### Single Speaker Format
+Write as a monologue (presentation, report, or one side of a phone call).
+Include natural speech features like self-corrections and pauses.
+"""
+
+    # アクセントセクション
+    accent_section = ""
+    if accent and accent != "us":
+        from app.prompts.accent_profiles import ACCENT_FEATURES, ACCENT_VOICES
+
+        accent_info = ACCENT_FEATURES.get(accent, {})
+        voice_info = ACCENT_VOICES.get(accent, {})
+        if accent_info:
+            expressions = "\n".join(
+                f"  - {e}" for e in accent_info.get("common_expressions", [])[:3]
+            )
+            accent_section = f"""
+### Accent: {voice_info.get("label", accent)}
+The speaker(s) should use vocabulary and phrasing natural to {voice_info.get("label", accent)}.
+Include region-specific expressions:
+{expressions}
+Context: {accent_info.get("business_context", "")}
+"""
+
+    # 環境コンテキスト
+    environment_section = ""
+    if environment and environment != "clean":
+        env_notes = {
+            "phone_call": "Include phone-specific language: 'Can you hear me?', 'You're on mute', signal issues.",
+            "video_call": "Include video call features: screen sharing references, chat mentions, camera issues.",
+            "office": "Include ambient references: 'Sorry, someone just came in', background mentions.",
+            "cafe": "More informal tone, shorter exchanges, ambient awareness.",
+        }
+        note = env_notes.get(environment, "")
+        if note:
+            environment_section = f"\n### Environment: {environment}\n{note}\n"
 
     return f"""You are a Business English Listening Material Generator for FluentEdge AI.
 Create realistic, natural-sounding business English content for listening comprehension practice.
@@ -141,20 +200,30 @@ Create realistic, natural-sounding business English content for listening compre
 - Speaking pace: {guide["speed"]}
 - Vocabulary level: {guide["vocabulary"]}
 - Grammar complexity: {guide["grammar"]}
+- Speech features: {guide["speech_features"]}
+{speaker_section}
+{accent_section}
+{environment_section}
 
 ## Content Design Rules
 
-### Authenticity
-1. Write as if this is a real business scenario (meeting, presentation, call, etc.)
-2. Include natural speech features (connectors, discourse markers)
-3. Use realistic names and company references
-4. Include some redundancy as in real speech (repetition, rephrasing)
+### Authenticity - THIS IS CRITICAL
+1. Write as if this is a REAL business scenario, NOT a textbook
+2. Include natural speech imperfections:
+   - Hesitations: "um", "uh", "let me think..."
+   - Self-corrections: "We need to— actually, let me rephrase that"
+   - Filler phrases: "you know", "I mean", "basically", "to be honest"
+   - Incomplete thoughts that get redirected
+3. Use realistic names, company references, and numbers
+4. Include redundancy as in real speech (repetition, rephrasing, circling back)
+5. This should sound like a recording of a REAL conversation, not a scripted dialogue
 
 ### For Japanese Learners
-1. Include vocabulary that has false cognates in Japanese (katakana English)
-2. Use idiomatic expressions with clear context clues
-3. Include connected speech features (gonna, wanna, etc.) appropriate to difficulty level
-4. Include cultural context that may be unfamiliar (small talk, directness levels)
+1. Include vocabulary with false cognates in Japanese (katakana English)
+2. Use idiomatic expressions with context clues for inference
+3. Include connected speech (gonna, wanna, kinda) appropriate to difficulty
+4. Include cultural context that may be unfamiliar (small talk, humor, sarcasm)
+5. For advanced: include indirect communication where meaning must be inferred
 
 ### Structure
 - Opening/introduction
@@ -185,7 +254,7 @@ Return ONLY a JSON object:
 }}
 
 ## Rules
-- Text should be natural spoken English, not written essay style
+- Text MUST sound like real speech, NOT a polished essay or news script
 - Include 5-8 vocabulary items worth learning
 - Key points should capture the main ideas (for summary evaluation later)
 - Vocabulary definitions should be clear and concise

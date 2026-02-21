@@ -33,6 +33,9 @@ class ComprehensionService:
         topic: str,
         difficulty: str = "intermediate",
         duration_minutes: int = 3,
+        accent: str | None = None,
+        multi_speaker: bool = False,
+        environment: str = "clean",
     ) -> ComprehensionMaterial:
         """
         ビジネス英語リスニング素材を生成
@@ -44,12 +47,20 @@ class ComprehensionService:
             topic: トピック
             difficulty: 難易度 (beginner, intermediate, advanced)
             duration_minutes: 素材の推定長さ（分）
+            accent: アクセント指定（uk, india, singapore等）
+            multi_speaker: マルチスピーカーモード
+            environment: 環境設定（clean, phone_call, video_call等）
 
         Returns:
             ComprehensionMaterial: 生成されたリスニング素材
         """
         system_prompt = build_material_generation_prompt(
-            topic, difficulty, duration_minutes
+            topic=topic,
+            difficulty=difficulty,
+            duration_minutes=duration_minutes,
+            accent=accent,
+            multi_speaker=multi_speaker,
+            environment=environment,
         )
 
         messages = [

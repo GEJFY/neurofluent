@@ -46,12 +46,27 @@ async def generate_listening_material(
         le=10,
         description="素材の推定長さ（分）",
     ),
+    accent: str | None = Query(
+        default=None,
+        description="アクセント: us, uk, india, singapore, australia等",
+    ),
+    multi_speaker: bool = Query(
+        default=False,
+        description="マルチスピーカーモード（対話形式の素材）",
+    ),
+    environment: str = Query(
+        default="clean",
+        description="環境: clean, phone_call, video_call, office, cafe",
+    ),
 ):
     """
     リスニング素材を生成
 
     指定したトピック・難易度・長さに基づいてビジネス英語の
     リスニング素材（スクリプト + 語彙 + 要点）を生成する。
+
+    accent / multi_speaker / environment を指定することで、
+    より実践的なリスニング素材を生成できる。
 
     素材生成後、generate_questionsエンドポイントで理解度問題を取得可能。
     """
@@ -64,6 +79,9 @@ async def generate_listening_material(
         topic=topic,
         difficulty=difficulty,
         duration_minutes=duration,
+        accent=accent,
+        multi_speaker=multi_speaker,
+        environment=environment,
     )
     return material
 

@@ -25,6 +25,8 @@ class ShadowingService:
         topic: str = "business_meeting",
         difficulty: str = "intermediate",
         user_level: str = "B2",
+        accent: str | None = None,
+        environment: str = "clean",
     ) -> ShadowingMaterial:
         """
         シャドーイング教材を動的に生成
@@ -36,6 +38,8 @@ class ShadowingService:
             topic: トピック（business_meeting, earnings_call等）
             difficulty: 難易度（beginner, intermediate, advanced）
             user_level: ユーザーのCEFRレベル
+            accent: アクセント指定（uk, india, singapore等）
+            environment: 環境設定（clean, phone_call, video_call等）
 
         Returns:
             ShadowingMaterial: 教材テキスト・重要フレーズ・語彙注釈
@@ -44,6 +48,8 @@ class ShadowingService:
             topic=topic,
             difficulty=difficulty,
             user_level=user_level,
+            accent=accent,
+            environment=environment,
         )
 
         messages = [
@@ -137,17 +143,23 @@ class ShadowingService:
         text: str,
         speed: float = 1.0,
         voice: str = "en-US-JennyMultilingualNeural",
+        accent: str | None = None,
+        gender: str = "female",
+        environment: str = "clean",
     ) -> bytes:
         """
-        テキストを音声に変換
+        テキストを音声に変換（マルチアクセント・環境音対応）
 
-        Azure TTSを使用して、指定された速度で
+        Azure TTSを使用して、指定された速度・アクセント・環境で
         WAV形式の音声バイトを生成。
 
         Args:
             text: 変換対象テキスト
             speed: 再生速度（0.5〜2.0）
-            voice: 音声名
+            voice: 音声名（accentが指定された場合は無視）
+            accent: アクセント (us, uk, india, singapore 等)
+            gender: 性別 (female, male)
+            environment: 環境設定 (clean, phone_call, video_call 等)
 
         Returns:
             WAV形式の音声バイトデータ
@@ -156,6 +168,9 @@ class ShadowingService:
             text=text,
             voice=voice,
             speed=speed,
+            accent=accent,
+            gender=gender,
+            environment=environment,
         )
 
     async def evaluate_shadowing(

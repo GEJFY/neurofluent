@@ -35,7 +35,11 @@ class TalkStartRequest(BaseModel):
     """会話セッション開始リクエスト"""
 
     mode: str = Field(
-        description="会話モード（meeting, presentation, negotiation, small_talk, interview）"
+        description="会話モード（meeting, presentation, negotiation, small_talk, interview, phone_call）"
+    )
+    scenario_id: str | None = Field(
+        default=None,
+        description="シナリオID（scenarios.pyの詳細シナリオを使用する場合）",
     )
     scenario_description: str | None = Field(
         default=None,

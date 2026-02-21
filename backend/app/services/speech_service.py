@@ -2,6 +2,7 @@
 
 Azure Cognitive Services Speech SDK REST APIを使用して
 発音評価（Pronunciation Assessment）とテキスト読み上げ（TTS）を提供。
+マルチアクセント音声・環境音シミュレーション対応。
 """
 
 import base64
@@ -12,6 +13,12 @@ from typing import Any
 import httpx
 
 from app.config import settings
+from app.prompts.accent_profiles import (
+    ACCENT_VOICES,
+    AUDIO_ENVIRONMENTS,
+    get_language_code,
+    get_voice_for_accent,
+)
 from app.schemas.listening import PronunciationResult, PronunciationWordScore
 
 logger = logging.getLogger(__name__)
@@ -225,37 +232,39 @@ class SpeechService:
         text: str,
         voice: str = "en-US-JennyMultilingualNeural",
         speed: float = 1.0,
+        accent: str | None = None,
+        gender: str = "female",
+        environment: str = "clean",
     ) -> bytes:
         """
         テキストを音声に変換（Azure TTS）
 
         SSML形式でリクエストを送信し、WAV形式の音声バイトを返す。
-        速度パラメータにより0.5x〜2.0xの再生速度を指定可能。
+        アクセント選択・環境音シミュレーションに対応。
 
         Args:
             text: 変換対象テキスト
-            voice: 音声名（Azure Neural Voice）
+            voice: 音声名（Azure Neural Voice）。accentが指定された場合は無視。
             speed: 再生速度（0.5〜2.0）
+            accent: アクセント (us, uk, india, singapore, australia 等)
+            gender: 性別 (female, male)
+            environment: 環境設定 (clean, phone_call, video_call, office, cafe 等)
 
         Returns:
             WAV形式の音声バイトデータ
         """
+        # アクセントが指定された場合、対応する音声を選択
+        if accent and accent in ACCENT_VOICES:
+            voice = get_voice_for_accent(accent, gender)
+            lang_code = get_language_code(accent)
+        else:
+            lang_code = "en-US"
+
         # 速度を制限
         speed = max(0.5, min(2.0, speed))
 
-        # 速度をSSMLのrate属性に変換（パーセンテージ）
-        # 1.0 = default, 0.5 = -50%, 2.0 = +100%
-        rate_percent = int((speed - 1.0) * 100)
-        rate_str = f"{rate_percent:+d}%" if rate_percent != 0 else "default"
-
-        ssml = f"""<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis'
-    xmlns:mstts='http://www.w3.org/2001/mstts' xml:lang='en-US'>
-    <voice name='{voice}'>
-        <prosody rate='{rate_str}'>
-            {text}
-        </prosody>
-    </voice>
-</speak>"""
+        # SSMLを構築
+        ssml = self._build_ssml(text, voice, speed, lang_code, environment)
 
         headers = {
             "Ocp-Apim-Subscription-Key": self.speech_key,
@@ -284,6 +293,71 @@ class SpeechService:
         except Exception as e:
             logger.error("TTS変換で予期しないエラー: %s", e)
             raise
+
+    def _build_ssml(
+        self,
+        text: str,
+        voice: str,
+        speed: float,
+        lang_code: str,
+        environment: str,
+    ) -> str:
+        """SSML XMLを構築（環境音エフェクト対応）"""
+        rate_percent = int((speed - 1.0) * 100)
+        rate_str = f"{rate_percent:+d}%" if rate_percent != 0 else "default"
+
+        env_config = AUDIO_ENVIRONMENTS.get(environment, AUDIO_ENVIRONMENTS["clean"])
+        ssml_effect = env_config.get("ssml_effect")
+
+        # 環境音エフェクトの適用
+        if ssml_effect == "telephone":
+            # 電話回線シミュレーション: Azure mstts:express-as + audio effect
+            inner_content = f"""<mstts:audioeconfig type="telephone"/>
+            <prosody rate='{rate_str}'>
+                {text}
+            </prosody>"""
+        else:
+            inner_content = f"""<prosody rate='{rate_str}'>
+                {text}
+            </prosody>"""
+
+        # ビデオ通話のピッチ調整
+        adjustments = env_config.get("ssml_adjustments", {})
+        if "pitch" in adjustments:
+            pitch_val = adjustments["pitch"]
+            inner_content = f"""<prosody rate='{rate_str}' pitch='{pitch_val}'>
+                {text}
+            </prosody>"""
+
+        return f"""<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis'
+    xmlns:mstts='http://www.w3.org/2001/mstts' xml:lang='{lang_code}'>
+    <voice name='{voice}'>
+        {inner_content}
+    </voice>
+</speak>"""
+
+    def get_available_accents(self) -> list[dict]:
+        """利用可能なアクセント一覧を返す"""
+        return [
+            {
+                "id": accent_id,
+                "label": config["label"],
+                "label_ja": config["label_ja"],
+                "language_code": config["language_code"],
+            }
+            for accent_id, config in ACCENT_VOICES.items()
+        ]
+
+    def get_available_environments(self) -> list[dict]:
+        """利用可能な環境設定一覧を返す"""
+        return [
+            {
+                "id": env_id,
+                "label": config["label"],
+                "description": config["description"],
+            }
+            for env_id, config in AUDIO_ENVIRONMENTS.items()
+        ]
 
 
 # シングルトンインスタンス

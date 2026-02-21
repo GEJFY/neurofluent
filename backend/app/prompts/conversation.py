@@ -2,9 +2,10 @@
 
 Section 7.1に基づく会話AIのシステムプロンプトを構築する。
 モードに応じてシナリオ・トーン・評価基準を動的に調整。
+詳細シナリオDBとの統合に対応。
 """
 
-# モード別のシナリオ設定
+# モード別のデフォルトシナリオ設定（シナリオDB未使用時のフォールバック）
 MODE_CONFIGS = {
     "meeting": {
         "context": "a business meeting at an international company",
@@ -36,6 +37,12 @@ MODE_CONFIGS = {
         "tone": "professional, evaluative but encouraging",
         "focus_areas": "STAR method responses, self-presentation, company knowledge, career narrative",
     },
+    "phone_call": {
+        "context": "a business phone call or conference call",
+        "role": "a colleague or client on the other end of the line",
+        "tone": "professional, clear, and concise",
+        "focus_areas": "phone etiquette, active listening confirmation, summarization, action items",
+    },
 }
 
 
@@ -44,6 +51,7 @@ def build_conversation_system_prompt(
     user_level: str = "B2",
     scenario_description: str | None = None,
     native_language: str = "ja",
+    scenario: dict | None = None,
 ) -> str:
     """
     会話トレーナーのシステムプロンプトを構築
@@ -53,14 +61,31 @@ def build_conversation_system_prompt(
         user_level: ユーザーのCEFRレベル
         scenario_description: カスタムシナリオの説明
         native_language: ユーザーの母語コード
+        scenario: scenarios.pyから取得した詳細シナリオdict
 
     Returns:
         システムプロンプト文字列
     """
     config = MODE_CONFIGS.get(mode, MODE_CONFIGS["meeting"])
 
-    # カスタムシナリオがある場合はコンテキストを上書き
-    context = scenario_description if scenario_description else config["context"]
+    # 詳細シナリオが指定されている場合はそちらを優先
+    if scenario:
+        context = scenario.get("description", config["context"])
+        role = scenario.get("ai_role", config["role"])
+        key_phrases = scenario.get("key_phrases", [])
+        challenges = scenario.get("challenges", [])
+
+        scenario_section = ""
+        if key_phrases:
+            phrases_list = "\n".join(f"  - {p}" for p in key_phrases)
+            scenario_section += f"\n### Target Phrases\nEncourage the learner to use these expressions:\n{phrases_list}\n"
+        if challenges:
+            challenges_list = "\n".join(f"  - {c}" for c in challenges)
+            scenario_section += f"\n### Planned Challenges\nIntroduce these naturally during the conversation:\n{challenges_list}\n"
+    else:
+        context = scenario_description if scenario_description else config["context"]
+        role = config["role"]
+        scenario_section = ""
 
     language_notes = ""
     if native_language == "ja":
@@ -76,7 +101,7 @@ def build_conversation_system_prompt(
     return f"""You are an expert Business English conversation trainer for FluentEdge AI.
 
 ## Your Role
-You are {config["role"]} in the context of {context}.
+You are {role} in the context of {context}.
 
 ## User Profile
 - Current English level: CEFR {user_level}
@@ -99,7 +124,7 @@ You are {config["role"]} in the context of {context}.
 
 ### Focus Areas for This Mode
 {config["focus_areas"]}
-
+{scenario_section}
 ### Key Behaviors
 1. **Stay in character**: Never break the roleplay to explain grammar or give explicit corrections during the conversation flow
 2. **Natural scaffolding**: If the user makes an error, naturally rephrase in your response (recasting technique)

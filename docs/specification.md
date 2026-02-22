@@ -36,6 +36,7 @@
 | Phase 2 | 音声統合（リスニング・パターン練習・リアルタイム音声） | 完了 |
 | Phase 3 | 学習最適化（もごもご英語・高度分析・サブスクリプション） | 完了 |
 | Phase 4 | 高度な機能（発音分析・聴解力テスト） | 完了 |
+| Phase 5 | デスクトップレスポンシブ・音声UI改善・テスト拡充 | 完了 |
 
 ### セマンティックバージョニング方針
 
@@ -815,7 +816,7 @@ next_review =    復習間隔を計算
 | F-002 | /login | ログイン | 不要 | 1 |
 | F-003 | /register | ユーザー登録 | 不要 | 1 |
 | F-004 | /dashboard | ダッシュボード | 必要 | 1 |
-| F-005 | /talk | AI英会話（テキスト） | 必要 | 1 |
+| F-005 | /talk | AI英会話（テキスト＋音声） | 必要 | 1 |
 | F-006 | /talk/realtime | AI英会話（音声） | 必要 | 2 |
 | F-007 | /speaking | スピーキング練習 | 必要 | 1 |
 | F-008 | /speaking/pattern | パターン練習 | 必要 | 2 |
@@ -905,6 +906,37 @@ Zustand Store 構成:
 | md | 768px+ | タブレット |
 | lg | 1024px+ | デスクトップ |
 | xl | 1280px+ | ワイドデスクトップ |
+
+### デスクトップレスポンシブデザイン詳細
+
+全変更は `lg:` (1024px+) / `xl:` (1280px+) プレフィックスのみ使用し、モバイル/タブレット表示に影響なし。
+
+| ページ | lg (1024px+) の変更 |
+|--------|---------------------|
+| AppShell | `max-w-7xl mx-auto`, パディング `lg:px-12 xl:px-16` |
+| Dashboard | 統計3列グリッド (`lg:grid-cols-3`), Quick Start横並び3列 |
+| Talk (setup) | 2パネルレイアウト (`lg:flex lg:gap-8`), モード2列, プレビューサイドパネル |
+| Talk (session) | ChatWindow `lg:px-8` パディング, MessageBubble `lg:max-w-[60%]` |
+| Talk (voice) | VoiceChat キャンバス `lg:w-96 lg:h-96` |
+| Listening hub | 2列メニュー (`lg:grid-cols-2`) |
+| Listening Shadowing | `lg:max-w-3xl` フォーム幅, Difficulty+Accent横並び |
+| Listening Comprehension | `lg:max-w-3xl` フォーム幅, トピック4列 (`lg:grid-cols-4`) |
+| Speaking hub | 2列メニュー (`lg:grid-cols-2`) |
+| Speaking Pattern | カテゴリー3列 (`lg:grid-cols-3`), `lg:max-w-2xl` |
+| Analytics | スキル横並び (`lg:flex lg:gap-8`) |
+| Exercise Cards | FlashCard/PatternCard/ReviewCard: `lg:max-w-2xl` |
+
+### 音声チャット (Voice Chat)
+
+セッション中のデフォルトモードは音声モード。Web Speech API (STT) + Talk API + Azure TTS で実現。
+
+| 項目 | 仕様 |
+|------|------|
+| STT | Web Speech API (SpeechRecognition) |
+| AI応答 | Talk API (`POST /api/talk/sessions/{id}/messages`) |
+| TTS | Azure Speech (`POST /api/tts`) |
+| 対応ブラウザ | Chrome, Edge, Safari (Firefox非対応→テキストモードフォールバック) |
+| デフォルト | 音声モード (`isVoiceMode = true`) |
 
 ---
 

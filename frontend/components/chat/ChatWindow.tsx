@@ -29,7 +29,7 @@ export default function ChatWindow({
   }, [messages, isSending]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-2 py-4 space-y-4">
+    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 lg:px-8">
       {/* メッセージが無い場合の表示 */}
       {messages.length === 0 && !isSending && (
         <div className="flex items-center justify-center h-full min-h-[200px]">

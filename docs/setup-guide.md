@@ -253,6 +253,27 @@ npm run test           # Vitest テスト実行
 npm run test:coverage  # カバレッジ付きテスト
 ```
 
+### 音声チャット機能のテスト
+
+Voice Chat 機能は Web Speech API を使用しているため、以下のブラウザが必要です：
+
+- **推奨**: Google Chrome（最新版）または Microsoft Edge
+- **対応**: Safari（macOS/iOS）
+- **非対応**: Firefox（音声認識APIが未実装）
+
+#### テスト手順
+
+1. Chrome または Edge で `http://localhost:3500/talk` にアクセス
+2. モードを選択して「Start Talking」をクリック
+3. 初回はブラウザからマイクアクセス許可のダイアログが表示される
+4. 中央のマイクボタンをタップして英語で発話
+5. AI の応答がテキスト表示＋音声再生される
+
+#### 注意事項
+
+- HTTPS 環境でないと SpeechRecognition が動作しないブラウザがあります（localhost は例外として許可）
+- マイクのアクセス許可を「拒否」した場合は、ブラウザの設定からリセットできます
+
 ---
 
 ## LLM プロバイダー設定

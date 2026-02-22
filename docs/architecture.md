@@ -94,11 +94,26 @@ components/
   chat/                   # チャット UI (ChatWindow, MessageBubble, FeedbackPanel)
   drill/                  # ドリル UI (FlashCard, ReviewCard)
   layout/                 # レイアウト (AppShell, Sidebar, BottomNav)
+  talk/                   # 音声チャット UI (VoiceChat)
 
 lib/
   api.ts                  # API クライアント
   stores/                 # Zustand ストア (auth-store, talk-store)
 ```
+
+### デスクトップレスポンシブ設計
+
+AppShell がレスポンシブの根幹を担う:
+
+- `md:ml-64` でサイドバー分のオフセット
+- `max-w-7xl mx-auto` でコンテンツ最大幅を制限
+- `lg:px-12 xl:px-16` でデスクトップ向けパディング
+
+各ページは Tailwind の `lg:` prefix で追加のレイアウト定義:
+
+- グリッド列数の拡大 (`lg:grid-cols-3`, `lg:grid-cols-4`)
+- フォーム幅の拡大 (`lg:max-w-3xl`)
+- 2パネルレイアウト (`lg:flex lg:gap-8` on Talk setup)
 
 ### Backend
 
@@ -302,6 +317,15 @@ LLMProvider (ABC)
                               |
                               v
                          [結果返却]
+```
+
+### Voice Chat データフロー
+
+```text
+User Speech → Web Speech API (STT) → Text
+  → api.sendMessage(sessionId, text) → AI Response Text
+    → api.requestTTS(text, voice) → Audio Blob
+      → Audio.play() → User hears AI response
 ```
 
 ### FSRS 復習

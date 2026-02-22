@@ -7,7 +7,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-> 脳科学に基づくAI英語トレーニングアプリケーション。マルチクラウドLLM対応（Azure AI Foundry / Anthropic / AWS Bedrock / GCP Vertex AI / ローカルOllama）で、Claude Opus 4.6 / Sonnet 4.5 / Haiku 4.5 による会話練習、瞬間英作文、発音分析、FSRS間隔反復など12機能を提供します。
+> 脳科学に基づくAI英語トレーニングアプリケーション。マルチクラウドLLM対応（Azure AI Foundry / Anthropic / AWS Bedrock / GCP Vertex AI / ローカルOllama）で、Claude Opus 4.6 / Sonnet 4.5 / Haiku 4.5 による会話練習、瞬間英作文、発音分析、FSRS間隔反復など12機能を提供します。Voice Chat（Web Speech API + Azure TTS による音声英会話）やデスクトップレスポンシブ対応（lg/xl ブレイクポイントによる最適化レイアウト）も搭載。
 
 ---
 
@@ -87,6 +87,7 @@ LLM_FALLBACK_PROVIDERS=bedrock,azure_foundry
 | **キャッシュ** | Redis | 7 (Alpine) |
 | **LLM** | Claude Opus 4.6 / Sonnet 4.5 / Haiku 4.5 | マルチクラウド対応 |
 | **LLMプロバイダー** | Azure AI Foundry / Anthropic / Bedrock / Vertex / Ollama | 切り替え可能 |
+| **音声** | Web Speech API / Azure Speech Services | ブラウザ音声認識 + Azure TTS |
 | **認証** | JWT (HS256) / Microsoft Entra ID | python-jose / passlib |
 | **決済** | Stripe | 11.4.1 |
 | **ログ** | structlog (JSON) | 24.4.0 |
@@ -490,7 +491,7 @@ terraform apply -var="cloud_provider=gcp" -var="environment=dev"
 
 | Phase | # | 機能 | 説明 |
 | --- | --- | --- | --- |
-| **Phase 1** | 1 | AI Free Talk | Claude Opus 4.6 / Sonnet 4.5 とのテキスト英会話 + 文法・表現フィードバック |
+| **Phase 1** | 1 | AI Free Talk（テキスト＋音声会話、6モード対応） | Claude Opus 4.6 / Sonnet 4.5 とのテキスト・音声英会話 + 文法・表現フィードバック |
 | | 2 | 瞬間英作文 | 日本語 → 英語の即時翻訳ドリル + AI スコアリング |
 | | 3 | FSRS 間隔反復 | 19パラメータの忘却曲線アルゴリズムで最適な復習タイミングを計算 |
 | | 4 | ダッシュボード | ストリーク、累計統計、学習アクティビティ可視化 |
@@ -502,6 +503,7 @@ terraform apply -var="cloud_provider=gcp" -var="environment=dev"
 | | 10 | サブスクリプション | Stripe決済による有料プラン（Standard / Premium） |
 | **Phase 4** | 11 | 発音分析 | Azure Speechによる発音評価 + 音声パターン習熟度追跡 |
 | | 12 | 聴解力テスト | 総合的な聴解力測定テスト |
+| **Phase 5** | — | デスクトップレスポンシブ・音声UI改善・テスト拡充 | 完了 |
 
 ---
 

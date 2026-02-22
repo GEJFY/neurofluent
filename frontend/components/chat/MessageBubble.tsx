@@ -36,7 +36,7 @@ export default function MessageBubble({
     <div
       className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}
     >
-      <div className={`max-w-[85%] md:max-w-[70%] ${isUser ? "order-1" : ""}`}>
+      <div className={`max-w-[85%] md:max-w-[70%] lg:max-w-[60%] ${isUser ? "order-1" : ""}`}>
         {/* メッセージバブル */}
         <div
           className={`px-4 py-3 rounded-2xl ${

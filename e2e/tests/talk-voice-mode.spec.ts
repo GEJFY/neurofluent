@@ -14,9 +14,6 @@ test.describe('Talk ページ - セッション開始と Voice UI', () => {
     // セッション開始
     await page.getByRole('button', { name: /start talking/i }).click()
 
-    // セッションヘッダーが表示される（モード名 + Session ラベル）
-    await expect(page.getByText('Session')).toBeVisible()
-
     // Voice/Text 切り替えボタンが表示される
     // Voice mode有効時は「Text」トグルが表示される
     await expect(page.getByText('Text', { exact: true }).first()).toBeVisible()

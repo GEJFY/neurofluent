@@ -473,7 +473,7 @@ export default function MogomogoPage() {
         {pageState === "listening" && currentExercise && (
           <div className="flex-1 flex flex-col items-center justify-center py-4">
             {/* 進捗バー */}
-            <div className="w-full max-w-lg mb-6">
+            <div className="w-full max-w-lg lg:max-w-2xl mb-6">
               <div className="flex items-center justify-between mb-2 text-xs text-[var(--color-text-muted)]">
                 <span>
                   {currentIndex + 1} / {exercises.length}
@@ -490,7 +490,7 @@ export default function MogomogoPage() {
               </div>
             </div>
 
-            <div className="w-full max-w-lg bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-6 md:p-8 space-y-6">
+            <div className="w-full max-w-lg lg:max-w-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-6 md:p-8 space-y-6">
               {/* タイトル */}
               <div className="text-center">
                 <p className="text-xs text-[var(--color-text-muted)] mb-2 uppercase tracking-wider">
@@ -554,7 +554,7 @@ export default function MogomogoPage() {
         {/* ディクテーション画面 */}
         {pageState === "dictation" && currentExercise && (
           <div className="flex-1 flex flex-col items-center justify-center py-4">
-            <div className="w-full max-w-lg bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-6 md:p-8 space-y-6">
+            <div className="w-full max-w-lg lg:max-w-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-6 md:p-8 space-y-6">
               <div className="text-center">
                 <p className="text-xs text-[var(--color-text-muted)] mb-2 uppercase tracking-wider">
                   Write what you heard
@@ -607,7 +607,7 @@ export default function MogomogoPage() {
         {/* 個別結果画面 */}
         {pageState === "result" && !showFinalResult && (
           <div className="flex-1 flex flex-col items-center justify-center py-4">
-            <div className="w-full max-w-lg bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-6 md:p-8 space-y-5 animate-fade-in">
+            <div className="w-full max-w-lg lg:max-w-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-6 md:p-8 space-y-5 animate-fade-in">
               {/* 正誤表示 */}
               {results[results.length - 1] && (
                 <>

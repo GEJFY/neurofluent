@@ -91,13 +91,13 @@ docker compose --profile full up -d
 
 | サービス | URL |
 | --- | --- |
-| バックエンド API | http://localhost:8000/health |
-| Swagger UI | http://localhost:8000/docs |
-| ReDoc | http://localhost:8000/redoc |
-| フロントエンド | http://localhost:3000 |
+| バックエンド API | http://localhost:8500/health |
+| Swagger UI | http://localhost:8500/docs |
+| ReDoc | http://localhost:8500/redoc |
+| フロントエンド | http://localhost:3500 |
 
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:8500/health
 # {"status":"healthy","service":"fluentedge-api"}
 ```
 
@@ -117,8 +117,8 @@ docker compose --profile db up -d
 
 ```bash
 docker compose ps
-# fluentedge-postgres    Up (healthy)    0.0.0.0:5432->5432/tcp
-# fluentedge-redis       Up (healthy)    0.0.0.0:6379->6379/tcp
+# fluentedge-postgres    Up (healthy)    0.0.0.0:5450->5432/tcp
+# fluentedge-redis       Up (healthy)    0.0.0.0:6390->6379/tcp
 
 # 接続テスト
 docker compose exec postgres pg_isready -U fluentedge
@@ -192,13 +192,13 @@ alembic upgrade head
 ### 手順 5: バックエンド起動
 
 ```bash
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8500
 ```
 
 起動成功時の出力:
 
 ```
-INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Uvicorn running on http://127.0.0.1:8500 (Press CTRL+C to quit)
 INFO:     Started reloader process [xxxxx]
 INFO:     Application startup complete.
 ```
@@ -234,12 +234,12 @@ npm run dev
 
 ```
   Next.js 15.1.x
-  - Local:        http://localhost:3000
+  - Local:        http://localhost:3500
 ```
 
 ### 手順 3: 動作確認
 
-1. ブラウザで http://localhost:3000 にアクセス
+1. ブラウザで http://localhost:3500 にアクセス
 2. ログインページが表示されることを確認
 3. バックエンドで登録したユーザーでログイン
 4. ダッシュボードが表示されれば成功
@@ -402,7 +402,7 @@ STRIPE_PRICE_PREMIUM=price_xxxxxxxxxxxx
 # Stripe CLI のインストール
 # https://stripe.com/docs/stripe-cli
 
-stripe listen --forward-to localhost:8000/api/subscription/webhook
+stripe listen --forward-to localhost:8500/api/subscription/webhook
 ```
 
 ---
@@ -466,7 +466,7 @@ npx playwright test --ui
 | **アプリケーション** ||||
 | `ENVIRONMENT` | No | `dev` | 実行環境 (dev/staging/production) |
 | `LOG_LEVEL` | No | `INFO` | ログレベル (DEBUG/INFO/WARNING/ERROR) |
-| `BACKEND_CORS_ORIGINS` | No | `http://localhost:3000` | CORS 許可オリジン (カンマ区切り) |
+| `BACKEND_CORS_ORIGINS` | No | `http://localhost:3500` | CORS 許可オリジン (カンマ区切り) |
 | **データベース** ||||
 | `DATABASE_URL` | Yes | -- | PostgreSQL 接続文字列 (async) |
 | `DATABASE_URL_SYNC` | Yes | -- | PostgreSQL 接続文字列 (sync, Alembic用) |
@@ -523,12 +523,12 @@ docker compose logs postgres
 
 # 2. ポート使用状況の確認
 # Windows:
-netstat -ano | findstr :5432
+netstat -ano | findstr :5450
 # macOS/Linux:
-lsof -i :5432
+lsof -i :5450
 
 # 3. .env の DATABASE_URL を確認
-# DATABASE_URL=postgresql+asyncpg://fluentedge:fluentedge@localhost:5432/fluentedge
+# DATABASE_URL=postgresql+asyncpg://fluentedge:fluentedge@localhost:5450/fluentedge
 
 # 4. コンテナの再起動
 docker compose down && docker compose --profile db up -d
@@ -539,7 +539,7 @@ docker compose down && docker compose --profile db up -d
 ```bash
 # backend/ ディレクトリから実行していることを確認
 cd backend
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8500
 
 # 仮想環境が有効化されているか確認
 which python  # macOS/Linux
@@ -550,7 +550,7 @@ where python  # Windows
 
 ```bash
 # DATABASE_URL_SYNC が正しいか確認
-# DATABASE_URL_SYNC=postgresql://fluentedge:fluentedge@localhost:5432/fluentedge
+# DATABASE_URL_SYNC=postgresql://fluentedge:fluentedge@localhost:5450/fluentedge
 
 alembic current   # 現在のリビジョン確認
 alembic history   # 履歴確認
@@ -561,7 +561,7 @@ alembic history   # 履歴確認
 `.env` の `BACKEND_CORS_ORIGINS` がフロントエンドのオリジンと一致しているか確認:
 
 ```ini
-BACKEND_CORS_ORIGINS=http://localhost:3000
+BACKEND_CORS_ORIGINS=http://localhost:3500
 ```
 
 ### LLM API 接続エラー

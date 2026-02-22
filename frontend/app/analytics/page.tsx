@@ -410,14 +410,14 @@ export default function AnalyticsPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* ヘッダー */}
         <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-heading font-bold text-[var(--color-text-primary)]">
+          <div className="space-y-2">
+            <h1 className="text-2xl md:text-3xl font-heading font-bold text-[var(--color-text-primary)] leading-tight">
               Learning Analytics
             </h1>
-            <p className="text-sm text-[var(--color-text-muted)]">
+            <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
               あなたの学習データを分析
             </p>
           </div>
@@ -475,7 +475,7 @@ export default function AnalyticsPage() {
             ) : (
               <>
                 {/* サマリーカード */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     {
                       label: "Practice Time",
@@ -518,9 +518,9 @@ export default function AnalyticsPage() {
                     return (
                       <div
                         key={card.label}
-                        className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-4"
+                        className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-5"
                       >
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center justify-between mb-4">
                           <div
                             className={`w-8 h-8 rounded-lg ${card.bgColor} flex items-center justify-center`}
                           >
@@ -583,11 +583,13 @@ export default function AnalyticsPage() {
                 <ListSkeleton rows={5} />
               </>
             ) : (
-              <>
-                <SkillRadar skills={skillScores} />
+              <div className="lg:flex lg:gap-8 lg:items-start">
+                <div className="lg:flex-1">
+                  <SkillRadar skills={skillScores} />
+                </div>
 
                 {/* スキル詳細バー */}
-                <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-5 space-y-4">
+                <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-6 space-y-5 mt-6 lg:mt-0 lg:flex-1">
                   <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                     Skill Breakdown
                   </p>
@@ -624,7 +626,7 @@ export default function AnalyticsPage() {
                     </div>
                   ))}
                 </div>
-              </>
+              </div>
             )}
           </div>
         )}

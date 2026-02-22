@@ -66,7 +66,7 @@ FluentEdge AI の保守体制、定期運用、セキュリティアップデー
 
 ```bash
 # ヘルスチェック
-curl -s http://localhost:8000/health | python -m json.tool
+curl -s http://localhost:8500/health | python -m json.tool
 
 # 直近1時間のエラー数
 docker compose logs --since 1h backend 2>&1 | grep -c "ERROR"

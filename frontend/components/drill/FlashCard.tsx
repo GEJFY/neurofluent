@@ -87,7 +87,7 @@ export default function FlashCard({
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto">
+    <div className="w-full max-w-lg lg:max-w-2xl mx-auto">
       {/* 進捗バー */}
       <div className="flex items-center justify-between mb-4 text-xs text-[var(--color-text-muted)]">
         <span>
@@ -111,7 +111,7 @@ export default function FlashCard({
           <p className="text-xs text-[var(--color-text-muted)] mb-2 uppercase tracking-wider">
             Translate to English
           </p>
-          <p className="text-xl md:text-2xl font-ja font-medium text-[var(--color-text-primary)] leading-relaxed">
+          <p className="text-xl md:text-2xl lg:text-3xl font-ja font-medium text-[var(--color-text-primary)] leading-relaxed">
             {exercise.japanese}
           </p>
           {exercise.key_pattern && (

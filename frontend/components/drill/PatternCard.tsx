@@ -144,7 +144,7 @@ export default function PatternCard({
   const categoryColor = CATEGORY_COLORS[exercise.category] || CATEGORY_COLORS.general;
 
   return (
-    <div className="w-full max-w-lg mx-auto">
+    <div className="w-full max-w-lg lg:max-w-2xl mx-auto">
       {/* 進捗バー */}
       <div className="flex items-center justify-between mb-4 text-xs text-[var(--color-text-muted)]">
         <span>
@@ -170,7 +170,7 @@ export default function PatternCard({
           <p className="text-xs text-[var(--color-text-muted)] mb-3 uppercase tracking-wider">
             Fill in the blank
           </p>
-          <p className="text-base md:text-lg text-[var(--color-text-primary)] leading-relaxed">
+          <p className="text-base md:text-lg lg:text-xl text-[var(--color-text-primary)] leading-relaxed">
             {renderTemplate(exercise.template)}
           </p>
         </div>

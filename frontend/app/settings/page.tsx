@@ -97,13 +97,13 @@ export default function SettingsPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* ヘッダー */}
-        <div className="space-y-1">
-          <h1 className="text-2xl font-heading font-bold text-[var(--color-text-primary)]">
+        <div className="space-y-2">
+          <h1 className="text-2xl md:text-3xl font-heading font-bold text-[var(--color-text-primary)] leading-tight">
             Settings
           </h1>
-          <p className="text-sm text-[var(--color-text-muted)]">
+          <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
             アプリの設定をカスタマイズ
           </p>
         </div>

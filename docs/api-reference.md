@@ -3,10 +3,10 @@
 FluentEdge AI バックエンド API の全エンドポイント仕様書です。
 12 機能・40 以上のエンドポイントを網羅しています。
 
-- **ベース URL (開発)**: `http://localhost:8000`
+- **ベース URL (開発)**: `http://localhost:8500`
 - **ベース URL (本番)**: `https://api.fluentedge.ai`
-- **Swagger UI**: `http://localhost:8000/docs`
-- **ReDoc**: `http://localhost:8000/redoc`
+- **Swagger UI**: `http://localhost:8500/docs`
+- **ReDoc**: `http://localhost:8500/redoc`
 
 ---
 

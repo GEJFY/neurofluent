@@ -114,7 +114,7 @@ export default function ReviewPage() {
           <h1 className="text-2xl font-heading font-bold text-[var(--color-text-primary)]">
             Spaced Review
           </h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">
+          <p className="text-sm text-[var(--color-text-secondary)] mt-1 leading-relaxed">
             間隔反復法で効率的に記憶を定着させましょう
           </p>
         </div>

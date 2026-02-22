@@ -55,7 +55,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar />
       {/* メインコンテンツエリア */}
       <main className="md:ml-64 min-h-screen pb-20 md:pb-0">
-        <div className="max-w-5xl mx-auto px-4 py-6 md:px-6 md:py-8">
+        <div className="max-w-7xl mx-auto px-5 py-6 md:px-8 md:py-10 lg:px-12 xl:px-16">
           {children}
         </div>
       </main>

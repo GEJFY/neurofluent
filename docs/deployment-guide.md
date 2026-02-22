@@ -54,8 +54,8 @@ cp .env.example .env
 docker compose --profile full up -d
 
 # 3. 動作確認
-curl http://localhost:8000/health
-curl http://localhost:3000
+curl http://localhost:8500/health
+curl http://localhost:3500
 
 # 4. 監視系も含めて起動する場合
 docker compose --profile full --profile monitoring up -d
@@ -341,7 +341,7 @@ az ad sp create-for-rbac \
 | `ENVIRONMENT` | dev | staging | production |
 | `LOG_LEVEL` | DEBUG | INFO | WARNING |
 | `JWT_EXPIRY_HOURS` | 24 | 12 | 8 |
-| `BACKEND_CORS_ORIGINS` | localhost:3000 | staging.fluentedge.ai | fluentedge.ai |
+| `BACKEND_CORS_ORIGINS` | localhost:3500 | staging.fluentedge.ai | fluentedge.ai |
 | `LLM_PROVIDER` | local / azure_foundry | azure_foundry | azure_foundry |
 | `LLM_FALLBACK_PROVIDERS` | (なし) | anthropic | anthropic,bedrock |
 | `LLM_RATE_LIMIT_RPM` | 60 | 60 | 120 |
@@ -380,7 +380,7 @@ az keyvault secret set --vault-name $KV_NAME \
 
 ### Docker Compose 環境 (開発)
 
-開発環境では HTTP (ポート 8000 / 3000) で動作します。
+開発環境では HTTP (ポート 8500 / 3500) で動作します。
 HTTPS が必要な場合は nginx をリバースプロキシとして追加します:
 
 ```bash

@@ -80,7 +80,7 @@ export default function ReviewCard({
         : "bg-accent/15 text-accent";
 
   return (
-    <div className="w-full max-w-lg mx-auto">
+    <div className="w-full max-w-lg lg:max-w-2xl mx-auto">
       {/* 進捗表示 */}
       <div className="flex items-center justify-between mb-4 text-xs text-[var(--color-text-muted)]">
         <span>

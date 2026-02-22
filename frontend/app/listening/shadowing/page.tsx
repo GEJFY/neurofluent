@@ -317,7 +317,7 @@ export default function ShadowingPage() {
         {/* ===== セットアップ画面 ===== */}
         {state === "setup" && (
           <div className="flex-1 flex items-center justify-center">
-            <div className="w-full max-w-lg space-y-6">
+            <div className="w-full max-w-lg lg:max-w-3xl space-y-6">
               {/* ヘッダー */}
               <div className="text-center space-y-1">
                 <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
@@ -371,8 +371,10 @@ export default function ShadowingPage() {
                 </div>
               </div>
 
+              {/* 難易度 + アクセント (デスクトップで横並び) */}
+              <div className="lg:flex lg:gap-6">
               {/* 難易度選択 */}
-              <div className="space-y-2">
+              <div className="space-y-2 lg:flex-1">
                 <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                   Difficulty
                 </p>
@@ -394,7 +396,7 @@ export default function ShadowingPage() {
               </div>
 
               {/* アクセント選択 */}
-              <div className="space-y-2">
+              <div className="space-y-2 mt-4 lg:mt-0 lg:flex-1">
                 <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                   Accent
                 </p>
@@ -414,6 +416,7 @@ export default function ShadowingPage() {
                   ))}
                 </div>
               </div>
+              </div>{/* 難易度+アクセント横並び終了 */}
 
               {/* 環境選択 */}
               <div className="space-y-2">
@@ -475,7 +478,7 @@ export default function ShadowingPage() {
             {/* メインコンテンツ */}
             <div className="flex-1 flex flex-col items-center justify-center py-8 space-y-8">
               {/* テキスト表示 */}
-              <div className="w-full max-w-2xl">
+              <div className="w-full max-w-2xl lg:max-w-4xl">
                 <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-6 md:p-8">
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
@@ -538,7 +541,7 @@ export default function ShadowingPage() {
             {/* メインコンテンツ */}
             <div className="flex-1 flex flex-col items-center justify-center py-8 space-y-6">
               {/* テキスト表示トグル */}
-              <div className="w-full max-w-2xl">
+              <div className="w-full max-w-2xl lg:max-w-4xl">
                 <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-6 md:p-8">
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">

@@ -153,7 +153,7 @@ pip install -r requirements.txt
 alembic upgrade head
 
 # バックエンド起動
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8500
 ```
 
 ### 5. フロントエンドをセットアップ
@@ -168,10 +168,10 @@ npm run dev
 
 | サービス | URL |
 | --- | --- |
-| バックエンド API | `http://localhost:8000/health` |
-| Swagger UI (API ドキュメント) | `http://localhost:8000/docs` |
-| ReDoc | `http://localhost:8000/redoc` |
-| フロントエンド | `http://localhost:3000` |
+| バックエンド API | `http://localhost:8500/health` |
+| Swagger UI (API ドキュメント) | `http://localhost:8500/docs` |
+| ReDoc | `http://localhost:8500/redoc` |
+| フロントエンド | `http://localhost:3500` |
 
 詳細は [セットアップガイド](docs/setup-guide.md) を参照してください。
 
@@ -207,7 +207,7 @@ LOCAL_MODEL_FAST=llama3.1:8b
 
 ```bash
 cd backend
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8500
 ```
 
 > ローカルLLMはAPIコスト $0.00 で動作しますが、応答品質はクラウドのClaude Sonnet/Haikuに比べて劣る場合があります。開発・テスト用途に推奨です。
@@ -411,7 +411,7 @@ source venv/bin/activate            # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # 開発サーバー（ホットリロード）
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8500
 
 # Alembic マイグレーション
 alembic revision --autogenerate -m "説明"   # 新規作成

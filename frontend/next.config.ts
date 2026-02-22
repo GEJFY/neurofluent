@@ -21,7 +21,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self' https://fonts.gstatic.com",
-      `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"} wss: https://*.applicationinsights.azure.com https://*.monitor.azure.com`,
+      `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8500"} wss: https://*.applicationinsights.azure.com https://*.monitor.azure.com`,
       "media-src 'self' blob:",
       "frame-ancestors 'none'",
     ].join("; "),

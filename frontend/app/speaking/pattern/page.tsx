@@ -523,7 +523,7 @@ export default function PatternPracticePage() {
         {/* ===== セットアップ画面 ===== */}
         {pageState === "setup" && (
           <div className="flex-1 flex items-center justify-center">
-            <div className="w-full max-w-md space-y-6">
+            <div className="w-full max-w-md lg:max-w-2xl space-y-6">
               {/* ヘッダー */}
               <div className="text-center space-y-1">
                 <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-3">
@@ -542,7 +542,7 @@ export default function PatternPracticePage() {
                 <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                   Category
                 </p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                   {CATEGORIES.map((cat) => (
                     <button
                       key={cat.id}

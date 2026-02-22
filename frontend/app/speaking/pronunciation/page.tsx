@@ -488,7 +488,7 @@ export default function PronunciationPage() {
         {pageState === "practice" && currentExercise && (
           <div className="flex-1 flex flex-col items-center justify-center py-4">
             {/* 進捗バー */}
-            <div className="w-full max-w-lg mb-6">
+            <div className="w-full max-w-lg lg:max-w-2xl mb-6">
               <div className="flex items-center justify-between mb-2 text-xs text-[var(--color-text-muted)]">
                 <span>
                   {currentIndex + 1} / {exercises.length}
@@ -516,7 +516,7 @@ export default function PronunciationPage() {
             />
 
             {/* コントロールエリア */}
-            <div className="w-full max-w-lg mt-6 space-y-4">
+            <div className="w-full max-w-lg lg:max-w-2xl mt-6 space-y-4">
               {/* 録音ボタン */}
               <div className="flex items-center justify-center gap-4">
                 <button
@@ -617,7 +617,7 @@ export default function PronunciationPage() {
         {/* 練習画面ローディング中 */}
         {pageState === "practice" && !currentExercise && (
           <div className="flex-1 flex items-center justify-center py-4">
-            <div className="w-full max-w-lg space-y-4">
+            <div className="w-full max-w-lg lg:max-w-2xl space-y-4">
               <CardSkeleton />
               <CardSkeleton />
             </div>

@@ -62,19 +62,19 @@ const MENU_ITEMS: SpeakingMenuItem[] = [
 export default function SpeakingPage() {
   return (
     <AppShell>
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* ヘッダー */}
-        <div className="space-y-1">
-          <h1 className="text-2xl font-heading font-bold text-[var(--color-text-primary)]">
+        <div className="space-y-2">
+          <h1 className="text-2xl md:text-3xl font-heading font-bold text-[var(--color-text-primary)] leading-tight">
             Speaking Drills
           </h1>
-          <p className="text-sm text-[var(--color-text-muted)]">
+          <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
             アウトプット力を鍛えるスピーキング練習メニュー
           </p>
         </div>
 
         {/* メニューカード一覧 */}
-        <div className="space-y-3">
+        <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
           {MENU_ITEMS.map((item) => {
             const Icon = item.icon;
             const content = (
@@ -118,7 +118,7 @@ export default function SpeakingPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
                     {item.titleJa}
                   </p>
                   <p className="text-xs text-[var(--color-text-secondary)] mt-1 leading-relaxed line-clamp-2">

@@ -76,57 +76,57 @@ export default function DashboardPage() {
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* 挨拶セクション */}
-          <div className="space-y-1">
-            <h1 className="text-2xl font-heading font-bold text-[var(--color-text-primary)]">
+          <div className="space-y-2">
+            <h1 className="text-2xl md:text-3xl font-heading font-bold text-[var(--color-text-primary)] leading-tight">
               {getGreeting()},{" "}
               <span className="text-primary">
                 {user?.name || "User"}
               </span>
             </h1>
-            <p className="text-sm text-[var(--color-text-muted)]">
+            <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
               今日も英語力を磨きましょう
             </p>
           </div>
 
           {/* 上段: 統計サマリー + ストリーク */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {/* 学習統計 */}
-            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-5">
-              <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-3">
+            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-6">
+              <h3 className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-4">
                 Learning Stats
               </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-2xl font-heading font-bold text-[var(--color-text-primary)]">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-5">
+                <div className="space-y-1">
+                  <p className="text-2xl font-heading font-bold text-[var(--color-text-primary)] leading-none">
                     {dashboard?.total_practice_minutes || 0}
                   </p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
+                  <p className="text-[11px] text-[var(--color-text-muted)] leading-snug">
                     Total Minutes
                   </p>
                 </div>
-                <div>
-                  <p className="text-2xl font-heading font-bold text-[var(--color-text-primary)]">
+                <div className="space-y-1">
+                  <p className="text-2xl font-heading font-bold text-[var(--color-text-primary)] leading-none">
                     {dashboard?.total_sessions || 0}
                   </p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
+                  <p className="text-[11px] text-[var(--color-text-muted)] leading-snug">
                     Sessions
                   </p>
                 </div>
-                <div>
-                  <p className="text-2xl font-heading font-bold text-[var(--color-text-primary)]">
+                <div className="space-y-1">
+                  <p className="text-2xl font-heading font-bold text-[var(--color-text-primary)] leading-none">
                     {dashboard?.total_expressions_learned || 0}
                   </p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
+                  <p className="text-[11px] text-[var(--color-text-muted)] leading-snug">
                     Expressions
                   </p>
                 </div>
-                <div>
-                  <p className="text-2xl font-heading font-bold text-[var(--color-text-primary)]">
+                <div className="space-y-1">
+                  <p className="text-2xl font-heading font-bold text-[var(--color-text-primary)] leading-none">
                     {dashboard?.pending_reviews || 0}
                   </p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
+                  <p className="text-[11px] text-[var(--color-text-muted)] leading-snug">
                     Pending Reviews
                   </p>
                 </div>
@@ -134,16 +134,16 @@ export default function DashboardPage() {
             </div>
 
             {/* ストリーク */}
-            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-5">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-warning/10 flex items-center justify-center">
-                  <Flame className="w-7 h-7 text-warning" />
+            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-6">
+              <div className="flex items-center gap-5">
+                <div className="w-16 h-16 rounded-2xl bg-warning/10 flex items-center justify-center">
+                  <Flame className="w-8 h-8 text-warning" />
                 </div>
-                <div>
-                  <p className="text-3xl font-heading font-bold text-[var(--color-text-primary)]">
+                <div className="space-y-1">
+                  <p className="text-4xl font-heading font-bold text-[var(--color-text-primary)] leading-none">
                     {dashboard?.streak_days || 0}
                   </p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
+                  <p className="text-xs text-[var(--color-text-secondary)]">
                     Day Streak
                   </p>
                 </div>
@@ -165,20 +165,20 @@ export default function DashboardPage() {
 
           {/* クイックアクセスメニュー */}
           <div>
-            <h2 className="text-lg font-heading font-semibold text-[var(--color-text-primary)] mb-3">
+            <h2 className="text-base font-heading font-semibold text-[var(--color-text-primary)] mb-4">
               Quick Start
             </h2>
-            <div className="space-y-2">
+            <div className="space-y-3 lg:grid lg:grid-cols-3 lg:gap-4 lg:space-y-0">
               <Link
                 href="/review"
-                className="flex items-center gap-4 p-4 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl hover:border-primary/30 transition-colors group"
+                className="flex items-center gap-4 p-4 md:p-5 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl hover:border-primary/30 transition-all group"
               >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                   <RotateCcw className="w-5 h-5 text-primary" />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                    <p className="text-sm font-semibold text-[var(--color-text-primary)] leading-snug">
                       Spaced Review
                     </p>
                     {(dashboard?.pending_reviews || 0) > 0 && (
@@ -187,47 +187,47 @@ export default function DashboardPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-[var(--color-text-muted)]">
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-1 leading-relaxed">
                     復習アイテムを確認しましょう
                   </p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-primary transition-colors" />
+                <ChevronRight className="w-5 h-5 text-[var(--color-text-muted)] group-hover:text-primary transition-colors shrink-0" />
               </Link>
 
               <Link
                 href="/speaking/flash"
-                className="flex items-center gap-4 p-4 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl hover:border-primary/30 transition-colors group"
+                className="flex items-center gap-4 p-4 md:p-5 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl hover:border-primary/30 transition-all group"
               >
-                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
                   <Zap className="w-5 h-5 text-accent" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[var(--color-text-primary)] leading-snug">
                     Flash Translation
                   </p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-1 leading-relaxed">
                     瞬間英作文で反射力を鍛えよう
                   </p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-primary transition-colors" />
+                <ChevronRight className="w-5 h-5 text-[var(--color-text-muted)] group-hover:text-primary transition-colors shrink-0" />
               </Link>
 
               <Link
                 href="/talk"
-                className="flex items-center gap-4 p-4 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl hover:border-primary/30 transition-colors group"
+                className="flex items-center gap-4 p-4 md:p-5 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl hover:border-primary/30 transition-all group"
               >
-                <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                <div className="w-11 h-11 rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
                   <MessageCircle className="w-5 h-5 text-warning" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[var(--color-text-primary)] leading-snug">
                     AI Free Talk
                   </p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-1 leading-relaxed">
                     AIと自由に英会話を練習しよう
                   </p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-primary transition-colors" />
+                <ChevronRight className="w-5 h-5 text-[var(--color-text-muted)] group-hover:text-primary transition-colors shrink-0" />
               </Link>
             </div>
           </div>
@@ -235,11 +235,11 @@ export default function DashboardPage() {
           {/* 直近の学習統計 */}
           {dashboard?.recent_daily_stats && dashboard.recent_daily_stats.length > 0 && (
             <div>
-              <h2 className="text-lg font-heading font-semibold text-[var(--color-text-primary)] mb-3">
+              <h2 className="text-base font-heading font-semibold text-[var(--color-text-primary)] mb-4">
                 Recent Activity
               </h2>
-              <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-5">
-                <div className="space-y-3">
+              <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-6">
+                <div className="space-y-4">
                   {dashboard.recent_daily_stats.slice(0, 5).map((stat, index) => (
                     <div key={index} className="flex items-center justify-between text-sm">
                       <span className="text-[var(--color-text-muted)]">

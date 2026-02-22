@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Send, Loader2, MessageCircle } from "lucide-react";
+import { Send, Loader2, MessageCircle, Mic, MessageSquare } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import ChatWindow from "@/components/chat/ChatWindow";
+import VoiceChat from "@/components/talk/VoiceChat";
 import { useTalkStore } from "@/lib/stores/talk-store";
 import { api } from "@/lib/api";
 
@@ -53,6 +54,7 @@ export default function TalkPage() {
   } = useTalkStore();
 
   const [input, setInput] = useState("");
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [selectedMode, setSelectedMode] = useState("casual_chat");
   const [scenarios, setScenarios] = useState<TalkScenario[]>([]);
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
@@ -123,25 +125,30 @@ export default function TalkPage() {
         {/* セッション未開始 */}
         {!currentSession ? (
           <div className="flex-1 flex items-center justify-center">
-            <div className="w-full max-w-md space-y-6 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+            <div className="w-full max-w-md lg:max-w-4xl space-y-6 text-center lg:text-left">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto lg:mx-0">
                 <MessageCircle className="w-8 h-8 text-primary" />
               </div>
               <div>
-                <h1 className="text-2xl font-heading font-bold text-[var(--color-text-primary)]">
+                <h1 className="text-2xl md:text-3xl font-heading font-bold text-[var(--color-text-primary)]">
                   AI Free Talk
                 </h1>
-                <p className="text-sm text-[var(--color-text-muted)] mt-1">
+                <p className="text-sm text-[var(--color-text-secondary)] mt-1 leading-relaxed">
                   AIと英語で自由に会話しましょう。文法・表現のフィードバックが即座にもらえます。
                 </p>
               </div>
+
+              {/* デスクトップ: 2パネルレイアウト */}
+              <div className="lg:flex lg:gap-8">
+              {/* 左パネル: モード選択 + シナリオ */}
+              <div className="lg:flex-1 space-y-4">
 
               {/* モード選択 */}
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                   Select Mode
                 </p>
-                <div className="grid gap-2">
+                <div className="grid gap-2 lg:grid-cols-2">
                   {TALK_MODES.map((mode) => (
                     <button
                       key={mode.id}
@@ -185,7 +192,7 @@ export default function TalkPage() {
                   <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                     Scenario <span className="text-[var(--color-text-muted)] font-normal normal-case">(optional)</span>
                   </p>
-                  <div className="grid gap-2 max-h-48 overflow-y-auto">
+                  <div className="grid gap-2 max-h-48 lg:max-h-64 overflow-y-auto">
                     {scenarios.map((scenario) => (
                       <button
                         key={scenario.id}
@@ -240,22 +247,51 @@ export default function TalkPage() {
                 </div>
               )}
 
-              {/* エラー表示 */}
-              {error && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">
-                  {error}
-                </div>
-              )}
+              </div>{/* 左パネル終了 */}
 
-              {/* 開始ボタン */}
-              <button
-                onClick={handleStartSession}
-                disabled={isLoading}
-                className="w-full py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-500 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-              >
-                {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                Start Talking
-              </button>
+              {/* 右パネル: プレビュー + 開始ボタン */}
+              <div className="lg:w-72 lg:shrink-0 space-y-4">
+                {/* 選択モードプレビュー */}
+                <div className="hidden lg:block bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-5 space-y-3">
+                  <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                    Selected
+                  </p>
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                      {TALK_MODES.find(m => m.id === selectedMode)?.label}
+                    </p>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                      {TALK_MODES.find(m => m.id === selectedMode)?.description}
+                    </p>
+                  </div>
+                  {selectedScenarioId && scenarios.find(s => s.id === selectedScenarioId) && (
+                    <div className="pt-3 border-t border-[var(--color-border)]">
+                      <p className="text-xs text-[var(--color-text-muted)]">Scenario</p>
+                      <p className="text-sm text-[var(--color-text-primary)] mt-0.5">
+                        {scenarios.find(s => s.id === selectedScenarioId)?.title}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* エラー表示 */}
+                {error && (
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+                    {error}
+                  </div>
+                )}
+
+                {/* 開始ボタン */}
+                <button
+                  onClick={handleStartSession}
+                  disabled={isLoading}
+                  className="w-full py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-500 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Start Talking
+                </button>
+              </div>
+              </div>{/* 2パネルレイアウト終了 */}
             </div>
           </div>
         ) : (
@@ -269,16 +305,38 @@ export default function TalkPage() {
                   Session
                 </span>
               </div>
-              <button
-                onClick={handleNewSession}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-              >
-                New Session
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Voice/Text切り替え */}
+                <button
+                  onClick={() => setIsVoiceMode(!isVoiceMode)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    isVoiceMode
+                      ? "bg-accent/10 text-accent hover:bg-accent/20"
+                      : "bg-[var(--color-bg-card)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] border border-[var(--color-border)]"
+                  }`}
+                >
+                  {isVoiceMode ? <MessageSquare className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                  {isVoiceMode ? "Text" : "Voice"}
+                </button>
+                <button
+                  onClick={handleNewSession}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                >
+                  New Session
+                </button>
+              </div>
             </div>
 
-            {/* チャットウィンドウ */}
-            <ChatWindow messages={messages} isSending={isSending} />
+            {/* Voice/Chat切り替え */}
+            {isVoiceMode ? (
+              <VoiceChat
+                sessionId={currentSession.id}
+                mode={currentSession.mode}
+                onEnd={handleNewSession}
+              />
+            ) : (
+              <ChatWindow messages={messages} isSending={isSending} />
+            )}
 
             {/* エラー表示 */}
             {error && (

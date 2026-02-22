@@ -17,7 +17,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fluentedge}
       POSTGRES_DB: ${POSTGRES_DB:-fluentedge}
     ports:
-      - "5432:5432"
+      - "5450:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -41,7 +41,7 @@ services:
     profiles: ["db", "full"]
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6390:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -67,7 +67,7 @@ services:
     profiles: ["full"]
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8500:8000"
     env_file:
       - .env
     environment:
@@ -99,14 +99,14 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:8000
+        NEXT_PUBLIC_API_URL: http://localhost:8500
     container_name: fluentedge-frontend
     profiles: ["full"]
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3500:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_API_URL: http://localhost:8500
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
       interval: 30s
@@ -152,7 +152,7 @@ services:
     profiles: ["monitoring"]
     restart: unless-stopped
     ports:
-      - "3001:3000"
+      - "3501:3000"
     volumes:
       - grafana_data:/var/lib/grafana
     environment:

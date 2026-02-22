@@ -33,7 +33,7 @@ FluentEdge AI の本番・ステージング環境における運用手順をま
 |   Frontend       |    |   Backend        |
 |   Next.js 15     |    |   FastAPI 0.115  |
 |   React 19       |    |   Python 3.11    |
-|   Port: 3000     |    |   Port: 8000     |
+|   Port: 3500     |    |   Port: 8500     |
 +------------------+    +--------+---------+
                                  |
                     +------------+-------------+
@@ -59,10 +59,10 @@ FluentEdge AI の本番・ステージング環境における運用手順をま
 
 | コンポーネント | 技術 | ポート | 説明 |
 | --- | --- | --- | --- |
-| Frontend | Next.js 15 / React 19 | 3000 | SPA / SSR フロントエンド |
-| Backend | FastAPI 0.115 / Python 3.11 | 8000 | REST API サーバー |
-| PostgreSQL | PostgreSQL 16 + pgvector | 5432 | メインデータベース |
-| Redis | Redis 7 Alpine | 6379 | キャッシュ / セッション |
+| Frontend | Next.js 15 / React 19 | 3500 | SPA / SSR フロントエンド |
+| Backend | FastAPI 0.115 / Python 3.11 | 8500 | REST API サーバー |
+| PostgreSQL | PostgreSQL 16 + pgvector | 5450 | メインデータベース |
+| Redis | Redis 7 Alpine | 6390 | キャッシュ / セッション |
 | LLM Layer | マルチクラウド対応 | -- | Claude Sonnet / Haiku |
 | Prometheus | prom/prometheus | 9090 | メトリクス収集 (オプション) |
 | Grafana | grafana/grafana | 3001 | ダッシュボード (オプション) |
@@ -106,7 +106,7 @@ docker compose --profile db up -d
 # 2. バックエンド起動
 cd backend
 source venv/bin/activate
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8500
 
 # 3. フロントエンド起動 (別ターミナル)
 cd frontend
@@ -168,7 +168,7 @@ FluentEdge AI は structlog による構造化ログを採用しています。
 
 ```bash
 # レスポンスヘッダーでリクエストIDを確認
-curl -i http://localhost:8000/health
+curl -i http://localhost:8500/health
 # X-Request-ID: a1b2c3d4-5678-90ab-cdef-1234567890ab
 ```
 
@@ -184,7 +184,7 @@ curl -i http://localhost:8000/health
 
 ```bash
 # バックエンドログ (ターミナルに直接出力)
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8500
 
 # PostgreSQL ログ
 docker compose logs -f postgres
@@ -259,7 +259,7 @@ ContainerAppConsoleLogs_CL
 ### エンドポイント
 
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:8500/health
 ```
 
 レスポンス:
@@ -279,8 +279,8 @@ docker-compose.yml で各サービスに healthcheck が設定されています
 | --- | --- | --- |
 | PostgreSQL | `pg_isready -U fluentedge` | 5秒 |
 | Redis | `redis-cli ping` | 5秒 |
-| Backend | `httpx.get('http://localhost:8000/health')` | 30秒 |
-| Frontend | `wget --spider http://localhost:3000/` | 30秒 |
+| Backend | `httpx.get('http://localhost:8500/health')` | 30秒 |
+| Frontend | `wget --spider http://localhost:3500/` | 30秒 |
 
 ### データベース・Redis の状態確認
 

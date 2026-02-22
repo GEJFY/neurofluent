@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     # Application
     environment: str = "dev"
     log_level: str = "INFO"
-    backend_cors_origins: str = "http://localhost:3000"
+    backend_cors_origins: str = "http://localhost:3500"
 
     # Rate Limiting (API global)
     rate_limit_authenticated: int = 100
@@ -26,14 +26,14 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = (
-        "postgresql+asyncpg://fluentedge:fluentedge@localhost:5432/fluentedge"
+        "postgresql+asyncpg://fluentedge:fluentedge@localhost:5450/fluentedge"
     )
     database_url_sync: str = (
-        "postgresql://fluentedge:fluentedge@localhost:5432/fluentedge"
+        "postgresql://fluentedge:fluentedge@localhost:5450/fluentedge"
     )
 
     # Redis
-    redis_url: str = "redis://localhost:6379/0"
+    redis_url: str = "redis://localhost:6390/0"
 
     # Azure OpenAI
     azure_openai_endpoint: str = ""

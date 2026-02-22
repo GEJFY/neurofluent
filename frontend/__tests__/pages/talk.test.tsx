@@ -57,7 +57,8 @@ describe('TalkPage', () => {
   it('全モード選択肢が表示される', () => {
     render(<TalkPage />)
 
-    expect(screen.getByText('Casual Chat')).toBeInTheDocument()
+    // 2パネルレイアウトでプレビューにも表示されるため getAllByText を使用
+    expect(screen.getAllByText('Casual Chat').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Business Meeting')).toBeInTheDocument()
     expect(screen.getByText('Interview')).toBeInTheDocument()
   })
@@ -98,6 +99,6 @@ describe('TalkPage', () => {
     const startButton = screen.getByRole('button', { name: /Start Talking/ })
     await user.click(startButton)
 
-    expect(mockStartSession).toHaveBeenCalledWith('casual_chat')
+    expect(mockStartSession).toHaveBeenCalledWith('casual_chat', undefined)
   })
 })

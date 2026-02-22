@@ -54,7 +54,7 @@ export default function TalkPage() {
   } = useTalkStore();
 
   const [input, setInput] = useState("");
-  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [isVoiceMode, setIsVoiceMode] = useState(true);
   const [selectedMode, setSelectedMode] = useState("casual_chat");
   const [scenarios, setScenarios] = useState<TalkScenario[]>([]);
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);

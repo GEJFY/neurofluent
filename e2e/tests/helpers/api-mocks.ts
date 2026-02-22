@@ -71,6 +71,21 @@ export async function mockTalkApi(page: Page) {
       }),
     })
   )
+
+  // メッセージ送信
+  await page.route('**/api/talk/sessions/*/messages', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'msg-ai-001',
+        role: 'assistant',
+        content: 'That sounds great! Could you elaborate on that point?',
+        feedback: null,
+        created_at: new Date().toISOString(),
+      }),
+    })
+  )
 }
 
 /**

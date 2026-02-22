@@ -378,7 +378,7 @@ export default function ComprehensionPage() {
       <div className="min-h-[70vh] flex flex-col">
         {/* セットアップ画面 */}
         {pageState === "setup" && (
-          <div className="space-y-6">
+          <div className="w-full max-w-lg lg:max-w-3xl mx-auto space-y-6">
             <div className="space-y-1">
               <h1 className="text-2xl font-heading font-bold text-[var(--color-text-primary)]">
                 Listening Comprehension
@@ -393,7 +393,7 @@ export default function ComprehensionPage() {
               <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                 Topic
               </p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                 {TOPICS.map((topic) => (
                   <button
                     key={topic.id}

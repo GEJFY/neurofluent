@@ -12,12 +12,13 @@ test.describe('デスクトップレスポンシブレイアウト', () => {
   test('サイドバーがデスクトップ幅で表示される', async ({ page }) => {
     await page.goto('/')
 
-    // Sidebar の FluentEdge ロゴが表示される
-    await expect(page.locator('nav').filter({ hasText: 'FluentEdge' })).toBeVisible()
+    // Sidebar（aside要素）の FluentEdge ロゴが表示される
+    const sidebar = page.locator('aside').filter({ hasText: 'FluentEdge' })
+    await expect(sidebar).toBeVisible()
 
-    // ナビゲーションリンクが表示される
-    await expect(page.getByRole('link', { name: /dashboard/i }).first()).toBeVisible()
-    await expect(page.getByRole('link', { name: /talk/i }).first()).toBeVisible()
+    // サイドバー内のナビゲーションリンクが表示される
+    await expect(sidebar.getByText('Dashboard')).toBeVisible()
+    await expect(sidebar.getByText('Talk')).toBeVisible()
   })
 
   test('ボトムナビがデスクトップ幅で非表示', async ({ page }) => {

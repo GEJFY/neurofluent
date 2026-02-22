@@ -12,7 +12,7 @@ test.describe('Talk ページ - モード&シナリオ選択', () => {
     await page.goto('/talk')
     const modes = ['Casual Chat', 'Business Meeting', 'Interview', 'Presentation', 'Negotiation', 'Phone Call']
     for (const mode of modes) {
-      await expect(page.getByText(mode, { exact: false })).toBeVisible()
+      await expect(page.getByText(mode, { exact: false }).first()).toBeVisible()
     }
   })
 

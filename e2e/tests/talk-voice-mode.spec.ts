@@ -26,9 +26,8 @@ test.describe('Talk ページ - Voice/Text モード切り替え', () => {
     await page.getByRole('button', { name: /start talking/i }).click()
     await expect(page.getByRole('button', { name: /end/i })).toBeVisible()
 
-    // Text トグルボタンをクリック（セッションヘッダー内）
-    const sessionHeader = page.locator('.border-b').first()
-    await sessionHeader.getByText('Text', { exact: true }).click()
+    // Text トグルボタンをクリック
+    await page.getByText('Text', { exact: true }).first().click()
 
     // テキスト入力エリアが表示される
     await expect(page.getByPlaceholder(/type your message/i)).toBeVisible()
@@ -40,12 +39,11 @@ test.describe('Talk ページ - Voice/Text モード切り替え', () => {
     await expect(page.getByRole('button', { name: /end/i })).toBeVisible()
 
     // テキストモードに切り替え
-    const sessionHeader = page.locator('.border-b').first()
-    await sessionHeader.getByText('Text', { exact: true }).click()
+    await page.getByText('Text', { exact: true }).first().click()
     await expect(page.getByPlaceholder(/type your message/i)).toBeVisible()
 
     // Voiceボタンで戻す
-    await sessionHeader.getByText('Voice', { exact: true }).click()
+    await page.getByText('Voice', { exact: true }).first().click()
 
     // VoiceChat の End ボタンが再表示される = Voice mode
     await expect(page.getByRole('button', { name: /end/i })).toBeVisible()
@@ -67,12 +65,11 @@ test.describe('Talk ページ - Voice/Text モード切り替え', () => {
     await expect(page.getByRole('button', { name: /end/i })).toBeVisible()
 
     // Voice → Text 切り替え
-    const sessionHeader = page.locator('.border-b').first()
-    await sessionHeader.getByText('Text', { exact: true }).click()
+    await page.getByText('Text', { exact: true }).first().click()
     await page.waitForTimeout(300)
 
     // Text → Voice 切り替え
-    await sessionHeader.getByText('Voice', { exact: true }).click()
+    await page.getByText('Voice', { exact: true }).first().click()
     await page.waitForTimeout(300)
 
     expect(errors).toHaveLength(0)
